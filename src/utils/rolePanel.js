@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 
-// Function to update all role panels in a guild
-async function updateRolePanels(client, guild) {
+// Function to update all role panels in a guild (or specific panels for changed roles)
+async function updateRolePanels(client, guild, changedRoleIds = null) {
     const config = client.config;
     const serverId = guild.id;
     
@@ -9,9 +9,21 @@ async function updateRolePanels(client, guild) {
         return;
     }
     
+    // Ensure we have fresh member data before updating panels
+    try {
+        await guild.members.fetch();
+    } catch (error) {
+        console.error('Error fetching guild members for panel update:', error);
+    }
+    
     const rolePanels = config.servers[serverId].rolePanels;
     
     for (const [panelName, panelData] of Object.entries(rolePanels)) {
+        // If specific roles are provided, only update panels for those roles
+        if (changedRoleIds && !changedRoleIds.includes(panelData.roleId)) {
+            continue;
+        }
+        
         if (panelData.channelId && panelData.messageId) {
             try {
                 const channel = guild.channels.cache.get(panelData.channelId);
@@ -20,6 +32,7 @@ async function updateRolePanels(client, guild) {
                     if (message) {
                         const embed = await createRolePanelEmbed(guild, panelData);
                         await message.edit({ embeds: [embed] });
+                        console.log(`Updated role panel ${panelName} in ${guild.name}`);
                     }
                 }
             } catch (error) {
@@ -31,6 +44,9 @@ async function updateRolePanels(client, guild) {
 
 // Function to create role panel embed
 async function createRolePanelEmbed(guild, panelData) {
+    // Ensure we have all guild members in cache
+    await guild.members.fetch();
+    
     const role = guild.roles.cache.get(panelData.roleId);
     const members = guild.members.cache.filter(member => member.roles.cache.has(panelData.roleId));
     

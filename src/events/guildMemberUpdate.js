@@ -18,10 +18,19 @@ module.exports = {
         const newRoles = newMember.roles.cache;
         
         if (oldRoles.size !== newRoles.size || !oldRoles.equals(newRoles)) {
-            console.log(`Role change detected for ${newMember.user.tag} in ${newMember.guild.name}`);
+            // Detect which roles have changed
+            const addedRoles = newRoles.filter(role => !oldRoles.has(role.id));
+            const removedRoles = oldRoles.filter(role => !newRoles.has(role.id));
             
-            // Update role panels after role changes
-            updateRolePanels(client, newMember.guild);
+            const changedRoleIds = [
+                ...addedRoles.map(role => role.id),
+                ...removedRoles.map(role => role.id)
+            ];
+            
+            console.log(`Role change detected for ${newMember.user.tag} in ${newMember.guild.name}: ${changedRoleIds.join(', ')}`);
+            
+            // Update only role panels for the changed roles
+            updateRolePanels(client, newMember.guild, changedRoleIds);
         }
     }
 };
