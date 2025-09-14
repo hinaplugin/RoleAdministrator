@@ -1,0 +1,40 @@
+{
+  "servers": {
+    "EXAMPLE_SERVER_ID": {
+      "autoRole": {
+        "enabled": false,
+        "roleIds": []
+      },
+      "rolePanels": {
+        "admin": {
+          "channelId": null,
+          "messageId": null,
+          "roleId": "ADMIN_ROLE_ID",
+          "title": "管理者一覧",
+          "description": "管理者ロールを持っているメンバーの一覧です",
+          "showCount": true
+        },
+        "moderator": {
+          "channelId": null,
+          "messageId": null,
+          "roleId": "MODERATOR_ROLE_ID",
+          "title": "モデレーター一覧",
+          "description": "モデレーターロールを持っているメンバーの一覧です",
+          "showCount": true
+        }
+      },
+      "roleButtons": {
+        "notification": {
+          "channelId": null,
+          "messageId": null,
+          "roleId": "NOTIFICATION_ROLE_ID",
+          "message": "通知を受け取る設定を変更できます。\n通知を受け取りたい場合は「通知ON」、受け取りたくない場合は「通知OFF」をクリックしてください。",
+          "joinLabel": "通知ON",
+          "leaveLabel": "通知OFF",
+          "joinEmoji": "🔔",
+          "leaveEmoji": "🔕"
+        }
+      }
+    }
+  }
+}
