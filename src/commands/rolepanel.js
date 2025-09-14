@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { createRolePanelEmbed } = require('../utils/rolePanel');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -68,37 +69,3 @@ module.exports = {
         console.log(`Role panel "${panelName}" deployed by ${interaction.user.tag} in ${interaction.guild.name}`);
     }
 };
-
-// Function to create role panel embed
-async function createRolePanelEmbed(guild, panelData) {
-    const role = guild.roles.cache.get(panelData.roleId);
-    const members = guild.members.cache.filter(member => member.roles.cache.has(panelData.roleId));
-    
-    const embed = new EmbedBuilder()
-        .setTitle(panelData.title)
-        .setColor(role ? role.color : 0x0099FF);
-    
-    if (members.size === 0) {
-        embed.setDescription('このロールを持っているメンバーはいません。');
-    } else {
-        let description = '';
-        
-        if (panelData.showCount) {
-            description += `**メンバー数:** ${members.size}\n\n`;
-        }
-        
-        const memberList = members.map(member => `• ${member.displayName}`).join('\n');
-        description += memberList;
-        
-        // Discord embed description limit is 4096 characters
-        if (description.length > 4096) {
-            description = description.substring(0, 4093) + '...';
-        }
-        
-        embed.setDescription(description);
-    }
-    
-    embed.setTimestamp();
-    
-    return embed;
-}
