@@ -67,25 +67,46 @@ async function createRolePanelEmbed(guild, panelData) {
         .setTitle(panelData.title)
         .setColor(embedColor);
     
-    if (members.size === 0) {
-        embed.setDescription('このロールを持っているメンバーはいません。');
+    let description = '';
+    
+    // Check if any roles have members
+    const hasAnyMembers = roles.some(role => 
+        guild.members.cache.some(member => member.roles.cache.has(role.id))
+    );
+    
+    if (!hasAnyMembers) {
+        description = 'このロールを持っているメンバーはいません。';
     } else {
-        let description = '';
-        
-        const memberList = members.map(member => `${member}`).join(' ');
-        description += memberList;
-        
-        if (panelData.showCount) {
-            description += `\n\n**メンバー数:** ${members.size}`;
+        // Display each role and its members separately
+        for (const role of roles) {
+            const roleMembers = guild.members.cache.filter(member => 
+                member.roles.cache.has(role.id)
+            );
+            
+            if (roleMembers.size > 0) {
+                description += `${role}\n\n`;
+                
+                const memberList = roleMembers.map(member => `${member}`).join(' ');
+                description += memberList;
+                
+                if (panelData.showCount) {
+                    description += `\n**メンバー数:** ${roleMembers.size}`;
+                }
+                
+                description += '\n\n';
+            }
         }
         
-        // Discord embed description limit is 4096 characters
-        if (description.length > 4096) {
-            description = description.substring(0, 4093) + '...';
-        }
-        
-        embed.setDescription(description);
+        // Remove trailing newlines
+        description = description.trim();
     }
+    
+    // Discord embed description limit is 4096 characters
+    if (description.length > 4096) {
+        description = description.substring(0, 4093) + '...';
+    }
+    
+    embed.setDescription(description);
     
     embed.setTimestamp();
     
