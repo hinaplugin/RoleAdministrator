@@ -84,7 +84,7 @@ async function createRolePanelEmbed(guild, panelData) {
             );
             
             if (roleMembers.size > 0) {
-                description += `${role}\n\n`;
+                description += `## ${role}\n\n`;
                 
                 const memberList = roleMembers.map(member => `${member}`).join(' ');
                 description += memberList;
