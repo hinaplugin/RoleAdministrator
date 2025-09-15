@@ -17,13 +17,13 @@ client.config = null;
 // Load configuration
 function loadConfig() {
     try {
-        const configPath = path.join(__dirname, 'config.json');
+        const configPath = process.env.CONFIG_PATH || path.join(__dirname, 'config.json');
         if (fs.existsSync(configPath)) {
             const configData = fs.readFileSync(configPath, 'utf8');
             client.config = JSON.parse(configData);
-            console.log('Configuration loaded successfully');
+            console.log(`Configuration loaded successfully from: ${configPath}`);
         } else {
-            console.error('Config file not found. Please create config.json based on sample-config.json');
+            console.error(`Config file not found at: ${configPath}. Please create config.json based on sample-config.json`);
             process.exit(1);
         }
     } catch (error) {
@@ -35,8 +35,9 @@ function loadConfig() {
 // Save configuration
 function saveConfig() {
     try {
-        fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(client.config, null, 2));
-        console.log('Configuration saved successfully');
+        const configPath = process.env.CONFIG_PATH || path.join(__dirname, 'config.json');
+        fs.writeFileSync(configPath, JSON.stringify(client.config, null, 2));
+        console.log(`Configuration saved successfully to: ${configPath}`);
     } catch (error) {
         console.error('Error saving configuration:', error);
     }
