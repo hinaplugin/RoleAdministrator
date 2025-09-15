@@ -61,17 +61,13 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
                 }
                 
                 if (!canEmbedLinks) {
-                    console.warn(`⚠️ Bot lacks EmbedLinks permission in channel #${channel.name} - embeds may not display properly`);
+                    console.error(`❌ Bot lacks EmbedLinks permission in channel #${channel.name}`);
+                    console.error('Role panel will not display properly without this permission.');
+                    console.error('Please grant the bot "埋め込みリンク" (Embed Links) permission in:');
+                    console.error('1. Server Settings → Roles → Bot Role → Embed Links');
+                    console.error('2. Or Channel Settings → Permissions → Bot → Embed Links');
+                    continue;
                 }
-                
-                // Temporary debug info for permission comparison
-                console.log(`🔍 Channel #${channel.name} permissions:`);
-                console.log(`  - SendMessages: ${canSendMessages}`);
-                console.log(`  - ManageMessages: ${canManageMessages}`);
-                console.log(`  - EmbedLinks: ${canEmbedLinks}`);
-                console.log(`  - Channel ID: ${channel.id}`);
-                console.log(`  - Channel type: ${channel.type}`);
-                console.log(`  - Parent category: ${channel.parent?.name || 'None'}`);
                 
                 const embed = await createRolePanelEmbed(guild, panelData);
                 await message.edit({ embeds: [embed] });
