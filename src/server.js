@@ -23,36 +23,12 @@ function loadConfig() {
             client.config = JSON.parse(configData);
             console.log('Configuration loaded successfully');
         } else {
-            console.log('Config file not found, creating default configuration');
-            createDefaultConfig();
+            console.error('Config file not found. Please create config.json based on sample-config.json');
+            process.exit(1);
         }
     } catch (error) {
         console.error('Error loading configuration:', error);
-        createDefaultConfig();
-    }
-}
-
-// Create default configuration
-function createDefaultConfig() {
-    const defaultConfig = {
-        servers: {
-            "EXAMPLE_SERVER_ID": {
-                autoRole: {
-                    enabled: false,
-                    roleIds: []
-                },
-                rolePanels: {},
-                roleButtons: {}
-            }
-        }
-    };
-    
-    try {
-        fs.writeFileSync(path.join(__dirname, 'config.json'), JSON.stringify(defaultConfig, null, 2));
-        client.config = defaultConfig;
-        console.log('Default configuration created');
-    } catch (error) {
-        console.error('Error creating default configuration:', error);
+        process.exit(1);
     }
 }
 

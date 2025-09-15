@@ -19,9 +19,13 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
     const rolePanels = config.servers[serverId].rolePanels;
     
     for (const [panelName, panelData] of Object.entries(rolePanels)) {
-        // If specific roles are provided, only update panels for those roles
-        if (changedRoleIds && !changedRoleIds.includes(panelData.roleId)) {
-            continue;
+        // If specific roles are provided, only update panels that contain those roles
+        if (changedRoleIds) {
+            const panelRoleIds = Array.isArray(panelData.roleIds) ? panelData.roleIds : [panelData.roleId || panelData.roleIds];
+            const hasChangedRole = changedRoleIds.some(roleId => panelRoleIds.includes(roleId));
+            if (!hasChangedRole) {
+                continue;
+            }
         }
         
         if (panelData.channelId && panelData.messageId) {
@@ -47,12 +51,21 @@ async function createRolePanelEmbed(guild, panelData) {
     // Ensure we have all guild members in cache
     await guild.members.fetch();
     
-    const role = guild.roles.cache.get(panelData.roleId);
-    const members = guild.members.cache.filter(member => member.roles.cache.has(panelData.roleId));
+    // Support both old roleId format and new roleIds array format
+    const roleIds = Array.isArray(panelData.roleIds) ? panelData.roleIds : [panelData.roleId || panelData.roleIds];
+    
+    // Get all roles and find a color for the embed
+    const roles = roleIds.map(roleId => guild.roles.cache.get(roleId)).filter(role => role);
+    const embedColor = roles.find(role => role.color !== 0)?.color || 0x0099FF;
+    
+    // Get all members who have at least one of the specified roles
+    const members = guild.members.cache.filter(member => 
+        roleIds.some(roleId => member.roles.cache.has(roleId))
+    );
     
     const embed = new EmbedBuilder()
         .setTitle(panelData.title)
-        .setColor(role ? role.color : 0x0099FF);
+        .setColor(embedColor);
     
     if (members.size === 0) {
         embed.setDescription('このロールを持っているメンバーはいません。');

@@ -40,11 +40,13 @@ module.exports = {
         
         const panelData = serverConfig.rolePanels[panelName];
         
-        // Check if role exists
-        const role = interaction.guild.roles.cache.get(panelData.roleId);
-        if (!role) {
+        // Check if roles exist
+        const roleIds = Array.isArray(panelData.roleIds) ? panelData.roleIds : [panelData.roleId || panelData.roleIds];
+        const invalidRoles = roleIds.filter(roleId => !interaction.guild.roles.cache.get(roleId));
+        
+        if (invalidRoles.length > 0) {
             await interaction.reply({ 
-                content: `ロール ID "${panelData.roleId}" が見つかりません。設定を確認してください。`, 
+                content: `ロール ID "${invalidRoles.join(', ')}" が見つかりません。設定を確認してください。`, 
                 ephemeral: true 
             });
             return;
