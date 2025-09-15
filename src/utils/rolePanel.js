@@ -30,32 +30,50 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
         
         if (panelData.channelId && panelData.messageId) {
             try {
+                console.log(`Attempting to update panel ${panelName} - Channel: ${panelData.channelId}, Message: ${panelData.messageId}`);
                 const channel = guild.channels.cache.get(panelData.channelId);
-                if (channel) {
-                    const message = await channel.messages.fetch(panelData.messageId);
-                    if (message) {
-                        const embed = await createRolePanelEmbed(guild, panelData);
-                        await message.edit({ embeds: [embed] });
-                        console.log(`Updated role panel ${panelName} in ${guild.name}`);
-                    }
+                if (!channel) {
+                    console.error(`Channel not found: ${panelData.channelId}`);
+                    continue;
                 }
+                
+                console.log(`Found channel: ${channel.name}`);
+                const message = await channel.messages.fetch(panelData.messageId);
+                if (!message) {
+                    console.error(`Message not found: ${panelData.messageId}`);
+                    continue;
+                }
+                
+                console.log(`Found message, creating embed...`);
+                const embed = await createRolePanelEmbed(guild, panelData);
+                console.log(`Embed created, updating message...`);
+                await message.edit({ embeds: [embed] });
+                console.log(`✅ Updated role panel ${panelName} in ${guild.name}`);
             } catch (error) {
-                console.error(`Error updating role panel ${panelName}:`, error);
+                console.error(`❌ Error updating role panel ${panelName}:`, error.message);
+                console.error('Full error:', error);
             }
+        } else {
+            console.log(`Skipping panel ${panelName} - missing channelId or messageId`);
         }
     }
 }
 
 // Function to create role panel embed
 async function createRolePanelEmbed(guild, panelData) {
+    console.log(`Creating embed for panel: ${panelData.title}`);
+    
     // Ensure we have all guild members in cache
     await guild.members.fetch();
+    console.log(`Fetched ${guild.memberCount} members`);
     
     // Support both old roleId format and new roleIds array format
     const roleIds = Array.isArray(panelData.roleIds) ? panelData.roleIds : [panelData.roleId || panelData.roleIds];
+    console.log(`Role IDs to process:`, roleIds);
     
     // Get all roles and find a color for the embed
     const roles = roleIds.map(roleId => guild.roles.cache.get(roleId)).filter(role => role);
+    console.log(`Found ${roles.length} valid roles:`, roles.map(r => r.name));
     const embedColor = roles.find(role => role.color !== 0)?.color || 0x0099FF;
     
     // Get all members who have at least one of the specified roles
@@ -82,6 +100,7 @@ async function createRolePanelEmbed(guild, panelData) {
             const roleMembers = guild.members.cache.filter(member => 
                 member.roles.cache.has(role.id)
             );
+            console.log(`Role ${role.name} has ${roleMembers.size} members`);
             
             if (roleMembers.size > 0) {
                 description += `## ${role}\n\n`;
@@ -96,6 +115,8 @@ async function createRolePanelEmbed(guild, panelData) {
                 description += '\n\n';
             }
         }
+        console.log(`Final description length: ${description.length} characters`);
+        console.log(`Description preview: ${description.substring(0, 200)}...`);
         
         // Remove trailing newlines
         description = description.trim();
