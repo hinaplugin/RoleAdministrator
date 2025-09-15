@@ -47,7 +47,31 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
                 console.log(`Found message, creating embed...`);
                 const embed = await createRolePanelEmbed(guild, panelData);
                 console.log(`Embed created, updating message...`);
-                await message.edit({ embeds: [embed] });
+                
+                // Check bot permissions
+                const botMember = guild.members.cache.get(guild.client.user.id);
+                const canManageMessages = channel.permissionsFor(botMember).has('ManageMessages');
+                const canSendMessages = channel.permissionsFor(botMember).has('SendMessages');
+                console.log(`Bot permissions - ManageMessages: ${canManageMessages}, SendMessages: ${canSendMessages}`);
+                
+                // Validate embed
+                if (!embed.data.title || !embed.data.description) {
+                    console.error('Invalid embed: missing title or description');
+                    return;
+                }
+                
+                // Attempt to edit the message
+                const editResult = await message.edit({ embeds: [embed] });
+                console.log(`Message edit result - ID: ${editResult.id}, Updated: ${editResult.editedTimestamp}`);
+                
+                // Verify the message was actually updated
+                const updatedMessage = await channel.messages.fetch(panelData.messageId, { force: true });
+                console.log(`Verification - Message embeds count: ${updatedMessage.embeds.length}`);
+                if (updatedMessage.embeds.length > 0) {
+                    console.log(`Embed title: ${updatedMessage.embeds[0].title}`);
+                    console.log(`Embed description length: ${updatedMessage.embeds[0].description?.length || 0}`);
+                }
+                
                 console.log(`✅ Updated role panel ${panelName} in ${guild.name}`);
             } catch (error) {
                 console.error(`❌ Error updating role panel ${panelName}:`, error.message);
