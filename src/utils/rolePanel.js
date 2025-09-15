@@ -30,74 +30,50 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
         
         if (panelData.channelId && panelData.messageId) {
             try {
-                console.log(`Attempting to update panel ${panelName} - Channel: ${panelData.channelId}, Message: ${panelData.messageId}`);
                 const channel = guild.channels.cache.get(panelData.channelId);
                 if (!channel) {
                     console.error(`Channel not found: ${panelData.channelId}`);
                     continue;
                 }
                 
-                console.log(`Found channel: ${channel.name}`);
                 const message = await channel.messages.fetch(panelData.messageId);
                 if (!message) {
                     console.error(`Message not found: ${panelData.messageId}`);
                     continue;
                 }
                 
-                console.log(`Found message, creating embed...`);
-                const embed = await createRolePanelEmbed(guild, panelData);
-                console.log(`Embed created, updating message...`);
-                
                 // Check bot permissions
                 const botMember = guild.members.cache.get(guild.client.user.id);
-                const canManageMessages = channel.permissionsFor(botMember).has('ManageMessages');
                 const canSendMessages = channel.permissionsFor(botMember).has('SendMessages');
-                console.log(`Bot permissions - ManageMessages: ${canManageMessages}, SendMessages: ${canSendMessages}`);
                 
-                // Validate embed
-                if (!embed.data.title || !embed.data.description) {
-                    console.error('Invalid embed: missing title or description');
-                    return;
+                if (!canSendMessages) {
+                    console.error(`❌ Bot lacks SendMessages permission in channel #${channel.name}`);
+                    console.error('Please ensure the bot has the following permissions in this channel:');
+                    console.error('- Send Messages');
+                    console.error('- Manage Messages (optional but recommended)');
+                    continue;
                 }
                 
-                // Attempt to edit the message
-                const editResult = await message.edit({ embeds: [embed] });
-                console.log(`Message edit result - ID: ${editResult.id}, Updated: ${editResult.editedTimestamp}`);
-                
-                // Verify the message was actually updated
-                const updatedMessage = await channel.messages.fetch(panelData.messageId, { force: true });
-                console.log(`Verification - Message embeds count: ${updatedMessage.embeds.length}`);
-                if (updatedMessage.embeds.length > 0) {
-                    console.log(`Embed title: ${updatedMessage.embeds[0].title}`);
-                    console.log(`Embed description length: ${updatedMessage.embeds[0].description?.length || 0}`);
-                }
-                
-                console.log(`✅ Updated role panel ${panelName} in ${guild.name}`);
+                const embed = await createRolePanelEmbed(guild, panelData);
+                await message.edit({ embeds: [embed] });
+                console.log(`Updated role panel ${panelName} in ${guild.name}`);
             } catch (error) {
-                console.error(`❌ Error updating role panel ${panelName}:`, error.message);
-                console.error('Full error:', error);
+                console.error(`Error updating role panel ${panelName}:`, error);
             }
-        } else {
-            console.log(`Skipping panel ${panelName} - missing channelId or messageId`);
         }
     }
 }
 
 // Function to create role panel embed
 async function createRolePanelEmbed(guild, panelData) {
-    console.log(`Creating embed for panel: ${panelData.title}`);
-    
     // Ensure we have all guild members in cache
     await guild.members.fetch();
-    console.log(`Fetched ${guild.memberCount} members`);
     
     // Support both old roleId format and new roleIds array format
     const roleIds = Array.isArray(panelData.roleIds) ? panelData.roleIds : [panelData.roleId || panelData.roleIds];
-    console.log(`Role IDs to process:`, roleIds);
     
     // Get all roles and find a color for the embed
     const roles = roleIds.map(roleId => guild.roles.cache.get(roleId)).filter(role => role);
-    console.log(`Found ${roles.length} valid roles:`, roles.map(r => r.name));
     const embedColor = roles.find(role => role.color !== 0)?.color || 0x0099FF;
     
     // Get all members who have at least one of the specified roles
@@ -124,7 +100,6 @@ async function createRolePanelEmbed(guild, panelData) {
             const roleMembers = guild.members.cache.filter(member => 
                 member.roles.cache.has(role.id)
             );
-            console.log(`Role ${role.name} has ${roleMembers.size} members`);
             
             if (roleMembers.size > 0) {
                 description += `## ${role}\n\n`;
@@ -139,8 +114,6 @@ async function createRolePanelEmbed(guild, panelData) {
                 description += '\n\n';
             }
         }
-        console.log(`Final description length: ${description.length} characters`);
-        console.log(`Description preview: ${description.substring(0, 200)}...`);
         
         // Remove trailing newlines
         description = description.trim();
