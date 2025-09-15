@@ -13,6 +13,13 @@ module.exports = {
             return;
         }
         
+        // Ensure we have fresh member data
+        try {
+            await newMember.guild.members.fetch();
+        } catch (error) {
+            console.error('Error fetching guild members:', error);
+        }
+        
         // Check if roles have changed
         const oldRoles = oldMember.roles.cache;
         const newRoles = newMember.roles.cache;
