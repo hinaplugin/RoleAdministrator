@@ -44,15 +44,34 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
                 
                 // Check bot permissions
                 const botMember = guild.members.cache.get(guild.client.user.id);
-                const canSendMessages = channel.permissionsFor(botMember).has('SendMessages');
+                const channelPerms = channel.permissionsFor(botMember);
+                const canSendMessages = channelPerms.has('SendMessages');
+                const canManageMessages = channelPerms.has('ManageMessages');
+                const canEmbedLinks = channelPerms.has('EmbedLinks');
                 
                 if (!canSendMessages) {
-                    console.error(`❌ Bot lacks SendMessages permission in channel #${channel.name}`);
-                    console.error('Please ensure the bot has the following permissions in this channel:');
-                    console.error('- Send Messages');
-                    console.error('- Manage Messages (optional but recommended)');
+                    console.error(`❌ Bot lacks SendMessages permission in channel #${channel.name} (${channel.id})`);
+                    console.error(`Channel type: ${channel.type}, Parent: ${channel.parent?.name || 'None'}`);
+                    console.error(`Permissions - Send: ${canSendMessages}, Manage: ${canManageMessages}, Embed: ${canEmbedLinks}`);
+                    console.error('Please check:');
+                    console.error('1. Bot role permissions in server settings');
+                    console.error('2. Channel-specific permission overrides');
+                    console.error('3. Category channel permission inheritance');
                     continue;
                 }
+                
+                if (!canEmbedLinks) {
+                    console.warn(`⚠️ Bot lacks EmbedLinks permission in channel #${channel.name} - embeds may not display properly`);
+                }
+                
+                // Temporary debug info for permission comparison
+                console.log(`🔍 Channel #${channel.name} permissions:`);
+                console.log(`  - SendMessages: ${canSendMessages}`);
+                console.log(`  - ManageMessages: ${canManageMessages}`);
+                console.log(`  - EmbedLinks: ${canEmbedLinks}`);
+                console.log(`  - Channel ID: ${channel.id}`);
+                console.log(`  - Channel type: ${channel.type}`);
+                console.log(`  - Parent category: ${channel.parent?.name || 'None'}`);
                 
                 const embed = await createRolePanelEmbed(guild, panelData);
                 await message.edit({ embeds: [embed] });
