@@ -11,8 +11,10 @@ Discord サーバーでロール管理を自動化するボットです。新規
 
 ### 📋 ロールパネル
 - 指定したロールの所有者一覧をEmbed形式で表示
+- ロールごとに分けて表示（ロールメンション → メンバー一覧 → メンバー数）
 - `/rolepanel <panelName>` で召喚
-- メンバー数の表示オプション
+- 複数ロール対応（1つのパネルで複数ロール表示可能）
+- メンバー数の表示オプション（各ロール個別）
 - 自動更新機能（ロールの変更時）
 
 ### 🔘 ロール切り替えボタン
@@ -53,6 +55,7 @@ cp .env.example .env
 ```env
 DISCORD_TOKEN=your_discord_bot_token_here
 CLIENT_ID=your_application_client_id_here
+CONFIG_PATH=./src/config.json
 ```
 
 ### 4. ボット権限
@@ -64,13 +67,21 @@ CLIENT_ID=your_application_client_id_here
 - Embed リンク
 - サーバーメンバーを見る
 
-### 5. スラッシュコマンドのデプロイ
+### 5. 設定ファイルの準備
+
+```bash
+# sample-config.jsonを参考にconfig.jsonを作成
+cp src/sample-config.json src/config.json
+# config.jsonを編集して実際のサーバーIDとロールIDを設定
+```
+
+### 6. スラッシュコマンドのデプロイ
 
 ```bash
 npm run deploy
 ```
 
-### 6. 起動
+### 7. 起動
 
 ```bash
 # 本番環境
@@ -82,7 +93,9 @@ npm run dev
 
 ## 設定
 
-### config.json の構造
+### 設定ファイルの構造
+
+設定ファイルのパスは環境変数 `CONFIG_PATH` で指定できます（デフォルト: `./src/config.json`）
 
 ```json
 {
@@ -96,9 +109,17 @@ npm run dev
         "admin": {
           "channelId": null,
           "messageId": null,
-          "roleId": "ADMIN_ROLE_ID",
+          "roleIds": ["ADMIN_ROLE_ID"],
           "title": "管理者一覧",
           "description": "管理者ロールを持っているメンバーの一覧です",
+          "showCount": true
+        },
+        "staff": {
+          "channelId": null,
+          "messageId": null,
+          "roleIds": ["ADMIN_ROLE_ID", "MODERATOR_ROLE_ID"],
+          "title": "スタッフ一覧",
+          "description": "管理者・モデレーターロールを持っているメンバーの一覧です",
           "showCount": true
         }
       },
@@ -121,10 +142,11 @@ npm run dev
 
 ### 設定のカスタマイズ
 
-1. `src/config.json` を編集
+1. `src/sample-config.json` を参考に `src/config.json` を作成・編集
 2. サーバーIDを実際のサーバーIDに変更
 3. ロールIDを実際のロールIDに変更
-4. `/reload` コマンドで設定を再読み込み
+4. 複数ロールのパネルは `roleIds` 配列で指定
+5. `/reload` コマンドで設定を再読み込み
 
 ## 使用方法
 
@@ -132,6 +154,7 @@ npm run dev
 
 - `/help` - ヘルプを表示
 - `/rolepanel admin` - 管理者パネルを召喚
+- `/rolepanel staff` - スタッフパネルを召喚（複数ロール対応例）
 - `/rolebutton notification` - 通知ボタンを設置
 - `/reload` - 設定を再読み込み
 
@@ -147,9 +170,15 @@ npm run dev
 - **設定管理**: JSON
 - **環境変数管理**: dotenv
 
+## プロジェクト情報
+
+- **作者**: hina_mikan
+- **ライセンス**: Apache-2.0
+- **キーワード**: discord, bot, role, panel
+
 ## ライセンス
 
-ISC License
+Apache-2.0 License
 
 ## 貢献
 
