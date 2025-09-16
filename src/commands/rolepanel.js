@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { createRolePanelEmbed } = require('../utils/rolePanel');
-const { savePanelData } = require('../utils/panelStorage');
+const { isPanelNameExists, savePanelData } = require('../utils/panelStorage');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -60,6 +60,15 @@ async function handleCreateCommand(interaction) {
     if (!/^[a-zA-Z0-9_-]+$/.test(panelName)) {
         await interaction.reply({
             content: 'パネル名は英数字、ハイフン、アンダースコアのみ使用できます。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // パネル名の重複チェック
+    if (isPanelNameExists(guildId, panelName)) {
+        await interaction.reply({
+            content: `パネル名 "${panelName}" は既に使用されています。別の名前を指定してください。`,
             ephemeral: true
         });
         return;

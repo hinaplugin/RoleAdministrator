@@ -23,18 +23,29 @@ function ensureDirectory(dirPath) {
     }
 }
 
+// パネル名の重複チェック
+function isPanelNameExists(guildId, panelName) {
+    try {
+        const filePath = path.join(getGuildPanelDirectory(guildId), `${panelName}.json`);
+        return fs.existsSync(filePath);
+    } catch (error) {
+        console.error(`パネル名重複チェックエラー: ${guildId}/${panelName}:`, error);
+        return false;
+    }
+}
+
 // パネルデータを保存
 function savePanelData(guildId, panelName, panelData) {
     try {
         const panelDir = getGuildPanelDirectory(guildId);
         ensureDirectory(panelDir);
-        
+
         const filePath = path.join(panelDir, `${panelName}.json`);
         const dataToSave = {
             ...panelData,
             updatedAt: new Date().toISOString()
         };
-        
+
         fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2));
         console.log(`パネルデータを保存しました: ${guildId}/${panelName}`);
         return true;
@@ -109,6 +120,17 @@ function deletePanelData(guildId, panelName) {
         return false;
     } catch (error) {
         console.error(`${guildId}/${panelName} のパネルデータ削除エラー:`, error);
+        return false;
+    }
+}
+
+// ボタン名の重複チェック
+function isButtonNameExists(guildId, buttonName) {
+    try {
+        const filePath = path.join(getGuildButtonDirectory(guildId), `${buttonName}.json`);
+        return fs.existsSync(filePath);
+    } catch (error) {
+        console.error(`ボタン名重複チェックエラー: ${guildId}/${buttonName}:`, error);
         return false;
     }
 }
@@ -207,11 +229,13 @@ module.exports = {
     getDataDirectory,
     getGuildPanelDirectory,
     getGuildButtonDirectory,
+    isPanelNameExists,
     savePanelData,
     loadPanelData,
     getAllPanelNames,
     loadAllPanelsForGuild,
     deletePanelData,
+    isButtonNameExists,
     saveButtonData,
     loadButtonData,
     getAllButtonNames,

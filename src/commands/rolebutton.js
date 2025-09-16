@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, PermissionFlagsBits } = require('discord.js');
-const { saveButtonData } = require('../utils/panelStorage');
+const { isButtonNameExists, saveButtonData } = require('../utils/panelStorage');
 const fs = require('fs');
 const path = require('path');
 
@@ -86,6 +86,15 @@ async function handleCreateCommand(interaction) {
     if (!/^[a-zA-Z0-9_-]+$/.test(buttonName)) {
         await interaction.reply({
             content: 'ボタン名は英数字、ハイフン、アンダースコアのみ使用できます。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // ボタン名の重複チェック
+    if (isButtonNameExists(guildId, buttonName)) {
+        await interaction.reply({
+            content: `ボタン名 "${buttonName}" は既に使用されています。別の名前を指定してください。`,
             ephemeral: true
         });
         return;
