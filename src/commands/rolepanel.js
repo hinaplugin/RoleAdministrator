@@ -160,27 +160,20 @@ async function handleCreateCommand(interaction) {
 function parseRoles(rolesInput, guild) {
     const roleIds = [];
 
-    console.log(`ロール解析開始: "${rolesInput}"`);
-
     // スペースで分割して各部分を処理
     const parts = rolesInput.trim().split(/\s+/);
-    console.log(`分割された部分:`, parts);
 
     for (const part of parts) {
-        console.log(`処理中: "${part}"`);
-
         // ロールメンション (<@&id>) かチェック
         const mentionMatch = part.match(/^<@&(\d+)>$/);
         if (mentionMatch) {
             roleIds.push(mentionMatch[1]);
-            console.log(`ロールメンション検出: ${mentionMatch[1]}`);
             continue;
         }
 
         // ロールID（数字）かチェック
         if (/^\d+$/.test(part)) {
             roleIds.push(part);
-            console.log(`ロールID検出: ${part}`);
             continue;
         }
 
@@ -190,16 +183,11 @@ function parseRoles(rolesInput, guild) {
         );
         if (roleByName) {
             roleIds.push(roleByName.id);
-            console.log(`ロール名検出: ${part} -> ${roleByName.id}`);
-        } else {
-            console.log(`認識できませんでした: "${part}"`);
         }
     }
 
     // 重複を除去
-    const uniqueRoleIds = [...new Set(roleIds)];
-    console.log(`最終的なロールID:`, uniqueRoleIds);
-    return uniqueRoleIds;
+    return [...new Set(roleIds)];
 }
 
 async function handleDeleteCommand(interaction) {
