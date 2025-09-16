@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, PermissionFlagsBits } = require('discord.js');
-const { isButtonNameExists, saveButtonData, loadButtonData, deleteButtonData } = require('../utils/panelStorage');
+const { isButtonNameExists, saveButtonData, loadButtonData, deleteButtonData, getAllButtonNames } = require('../utils/panelStorage');
 const fs = require('fs');
 const path = require('path');
 
@@ -72,6 +72,16 @@ module.exports = {
                         .setRequired(true)
                 )
         )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('info')
+                .setDescription('ボタンの詳細情報を表示します')
+                .addStringOption(option =>
+                    option.setName('name')
+                        .setDescription('ボタン名（未指定時は全ボタンのリストを表示）')
+                        .setRequired(false)
+                )
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
     async execute(interaction) {
@@ -81,6 +91,8 @@ module.exports = {
             await handleCreateCommand(interaction);
         } else if (subcommand === 'delete') {
             await handleDeleteCommand(interaction);
+        } else if (subcommand === 'info') {
+            await handleInfoCommand(interaction);
         }
     }
 };
@@ -226,6 +238,132 @@ async function handleDeleteCommand(interaction) {
     } else {
         await interaction.reply({
             content: `ボタン "${buttonName}" の削除に失敗しました。`,
+            ephemeral: true
+        });
+    }
+}
+
+async function handleInfoCommand(interaction) {
+    const buttonName = interaction.options.getString('name');
+    const guildId = interaction.guild.id;
+
+    if (!buttonName) {
+        // ボタンリストを表示
+        const buttonNames = getAllButtonNames(guildId);
+
+        if (buttonNames.length === 0) {
+            await interaction.reply({
+                content: 'このサーバーにはボタンが作成されていません。',
+                ephemeral: true
+            });
+            return;
+        }
+
+        const embed = {
+            title: '🔘 ボタン一覧',
+            description: `このサーバーで作成されているボタン: ${buttonNames.length}個`,
+            fields: buttonNames.map((name, index) => ({
+                name: `${index + 1}. ${name}`,
+                value: `\`/rolebutton info name:${name}\` で詳細を確認`,
+                inline: false
+            })),
+            color: 0x9b59b6,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: 'ボタン管理システム'
+            }
+        };
+
+        await interaction.reply({
+            embeds: [embed],
+            ephemeral: true
+        });
+    } else {
+        // 特定のボタンの詳細を表示
+        if (!/^[a-zA-Z0-9_-]+$/.test(buttonName)) {
+            await interaction.reply({
+                content: 'ボタン名は英数字、ハイフン、アンダースコアのみ使用できます。',
+                ephemeral: true
+            });
+            return;
+        }
+
+        const buttonData = loadButtonData(guildId, buttonName);
+        if (!buttonData) {
+            await interaction.reply({
+                content: `ボタン "${buttonName}" が見つかりません。`,
+                ephemeral: true
+            });
+            return;
+        }
+
+        // ロール情報を取得
+        let roleInfo = 'なし';
+        if (buttonData.roleId) {
+            const role = interaction.guild.roles.cache.get(buttonData.roleId);
+            roleInfo = role ? `<@&${buttonData.roleId}> (${role.name})` : `<@&${buttonData.roleId}> (削除済み)`;
+        }
+
+        // チャンネル情報を取得
+        let channelInfo = 'なし';
+        if (buttonData.channelId) {
+            const channel = interaction.guild.channels.cache.get(buttonData.channelId);
+            channelInfo = channel ? `<#${buttonData.channelId}> (${channel.name})` : `${buttonData.channelId} (削除済み)`;
+        }
+
+        const embed = {
+            title: `🔘 ボタン詳細: ${buttonName}`,
+            fields: [
+                {
+                    name: '📄 説明文',
+                    value: buttonData.message || 'なし',
+                    inline: false
+                },
+                {
+                    name: '🎭 対象ロール',
+                    value: roleInfo,
+                    inline: true
+                },
+                {
+                    name: '📍 設置チャンネル',
+                    value: channelInfo,
+                    inline: true
+                },
+                {
+                    name: '🆔 メッセージID',
+                    value: buttonData.messageId || 'なし',
+                    inline: true
+                },
+                {
+                    name: '✅ 参加ボタン',
+                    value: `${buttonData.joinEmoji || ''} ${buttonData.joinLabel || 'なし'}`,
+                    inline: true
+                },
+                {
+                    name: '❌ 退出ボタン',
+                    value: `${buttonData.leaveEmoji || ''} ${buttonData.leaveLabel || 'なし'}`,
+                    inline: true
+                },
+                {
+                    name: '📅 作成日時',
+                    value: new Date(buttonData.createdAt).toLocaleString('ja-JP'),
+                    inline: true
+                },
+                {
+                    name: '🔄 更新日時',
+                    value: new Date(buttonData.updatedAt).toLocaleString('ja-JP'),
+                    inline: true
+                }
+            ],
+            color: 0xe74c3c,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: `ボタン: ${buttonName}`
+            }
+        };
+
+        await interaction.reply({
+            embeds: [embed],
             ephemeral: true
         });
     }

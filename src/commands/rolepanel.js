@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { createRolePanelEmbed } = require('../utils/rolePanel');
-const { isPanelNameExists, savePanelData, loadPanelData, deletePanelData } = require('../utils/panelStorage');
+const { isPanelNameExists, savePanelData, loadPanelData, deletePanelData, getAllPanelNames } = require('../utils/panelStorage');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -46,6 +46,16 @@ module.exports = {
                         .setRequired(true)
                 )
         )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('info')
+                .setDescription('パネルの詳細情報を表示します')
+                .addStringOption(option =>
+                    option.setName('name')
+                        .setDescription('パネル名（未指定時は全パネルのリストを表示）')
+                        .setRequired(false)
+                )
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
     
     async execute(interaction) {
@@ -55,6 +65,8 @@ module.exports = {
             await handleCreateCommand(interaction);
         } else if (subcommand === 'delete') {
             await handleDeleteCommand(interaction);
+        } else if (subcommand === 'info') {
+            await handleInfoCommand(interaction);
         }
     }
 };
@@ -235,6 +247,131 @@ async function handleDeleteCommand(interaction) {
     } else {
         await interaction.reply({
             content: `パネル "${panelName}" の削除に失敗しました。`,
+            ephemeral: true
+        });
+    }
+}
+
+async function handleInfoCommand(interaction) {
+    const panelName = interaction.options.getString('name');
+    const guildId = interaction.guild.id;
+
+    if (!panelName) {
+        // パネルリストを表示
+        const panelNames = getAllPanelNames(guildId);
+
+        if (panelNames.length === 0) {
+            await interaction.reply({
+                content: 'このサーバーにはパネルが作成されていません。',
+                ephemeral: true
+            });
+            return;
+        }
+
+        const embed = {
+            title: '📋 パネル一覧',
+            description: `このサーバーで作成されているパネル: ${panelNames.length}個`,
+            fields: panelNames.map((name, index) => ({
+                name: `${index + 1}. ${name}`,
+                value: `\`/rolepanel info name:${name}\` で詳細を確認`,
+                inline: false
+            })),
+            color: 0x3498db,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: 'パネル管理システム'
+            }
+        };
+
+        await interaction.reply({
+            embeds: [embed],
+            ephemeral: true
+        });
+    } else {
+        // 特定のパネルの詳細を表示
+        if (!/^[a-zA-Z0-9_-]+$/.test(panelName)) {
+            await interaction.reply({
+                content: 'パネル名は英数字、ハイフン、アンダースコアのみ使用できます。',
+                ephemeral: true
+            });
+            return;
+        }
+
+        const panelData = loadPanelData(guildId, panelName);
+        if (!panelData) {
+            await interaction.reply({
+                content: `パネル "${panelName}" が見つかりません。`,
+                ephemeral: true
+            });
+            return;
+        }
+
+        // ロール情報を取得
+        const roleInfos = panelData.roleIds.map(roleId => {
+            const role = interaction.guild.roles.cache.get(roleId);
+            return role ? `<@&${roleId}> (${role.name})` : `<@&${roleId}> (削除済み)`;
+        });
+
+        // チャンネル情報を取得
+        let channelInfo = 'なし';
+        if (panelData.channelId) {
+            const channel = interaction.guild.channels.cache.get(panelData.channelId);
+            channelInfo = channel ? `<#${panelData.channelId}> (${channel.name})` : `${panelData.channelId} (削除済み)`;
+        }
+
+        const embed = {
+            title: `📋 パネル詳細: ${panelName}`,
+            fields: [
+                {
+                    name: '📝 タイトル',
+                    value: panelData.title || 'なし',
+                    inline: true
+                },
+                {
+                    name: '📄 説明文',
+                    value: panelData.message || 'なし',
+                    inline: true
+                },
+                {
+                    name: '🔢 メンバー数表示',
+                    value: panelData.showCount ? '有効' : '無効',
+                    inline: true
+                },
+                {
+                    name: '🎭 対象ロール',
+                    value: roleInfos.join('\n') || 'なし',
+                    inline: false
+                },
+                {
+                    name: '📍 設置チャンネル',
+                    value: channelInfo,
+                    inline: true
+                },
+                {
+                    name: '🆔 メッセージID',
+                    value: panelData.messageId || 'なし',
+                    inline: true
+                },
+                {
+                    name: '📅 作成日時',
+                    value: new Date(panelData.createdAt).toLocaleString('ja-JP'),
+                    inline: true
+                },
+                {
+                    name: '🔄 更新日時',
+                    value: new Date(panelData.updatedAt).toLocaleString('ja-JP'),
+                    inline: true
+                }
+            ],
+            color: 0x2ecc71,
+            timestamp: new Date().toISOString(),
+            footer: {
+                text: `パネル: ${panelName}`
+            }
+        };
+
+        await interaction.reply({
+            embeds: [embed],
             ephemeral: true
         });
     }

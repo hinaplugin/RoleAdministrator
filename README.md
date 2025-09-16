@@ -30,7 +30,6 @@ Discord サーバーでロール管理を自動化するボットです。新規
 
 ### 🛠️ 管理コマンド
 - `/help` - ヘルプ情報表示
-- `/reload` - 設定ファイル再読み込み
 
 ## セットアップ
 
@@ -178,7 +177,6 @@ npm run dev
 2. サーバーIDを実際のサーバーIDに変更
 3. 自動ロール付与のロールIDを設定
 4. デフォルトボタン設定をカスタマイズ（オプション）
-5. `/reload` コマンドで設定を再読み込み
 
 ## 使用方法
 
@@ -187,15 +185,18 @@ npm run dev
 #### パネル管理
 - `/rolepanel create roles:@Admin @Moderator name:staff title:"スタッフ一覧" message:"スタッフロールを持つメンバーの一覧です"` - スタッフパネルを作成
 - `/rolepanel delete name:staff` - スタッフパネルを削除
+- `/rolepanel info` - 全パネルの一覧を表示
+- `/rolepanel info name:staff` - スタッフパネルの詳細情報を表示
 
 #### ボタン管理
 - `/rolebutton create role:@通知 name:notification message:"通知設定を変更できます"` - 通知ボタンを作成
 - `/rolebutton create role:@開発者 name:dev message:"開発チームです" joinlabel:"参加する" leavelabel:"退出する"` - カスタムラベルでボタンを作成
 - `/rolebutton delete name:notification` - 通知ボタンを削除
+- `/rolebutton info` - 全ボタンの一覧を表示
+- `/rolebutton info name:notification` - 通知ボタンの詳細情報を表示
 
 #### その他
 - `/help` - ヘルプを表示
-- `/reload` - 設定を再読み込み
 
 ### 使用例
 
