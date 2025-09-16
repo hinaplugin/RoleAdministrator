@@ -13,44 +13,45 @@ module.exports = {
             .setColor(0x0099FF)
             .addFields(
                 {
-                    name: '📋 `/rolepanel <panelName>`',
-                    value: '指定したロールパネルを召喚・設置します\n例: `/rolepanel admin`',
+                    name: '📋 **ロールパネル管理**',
+                    value: '`/rolepanel create` - 新しいロールパネルを作成\n' +
+                           '`/rolepanel delete` - パネルを削除\n' +
+                           '`/rolepanel info` - パネル一覧・詳細表示',
                     inline: false
                 },
                 {
-                    name: '🔘 `/rolebutton <buttonName>`',
-                    value: '指定したロール切り替えボタンパネルを送信・設置します\n例: `/rolebutton notification`',
+                    name: '🔘 **ロールボタン管理**',
+                    value: '`/rolebutton create` - 新しいロールボタンを作成\n' +
+                           '`/rolebutton delete` - ボタンを削除\n' +
+                           '`/rolebutton info` - ボタン一覧・詳細表示',
                     inline: false
                 },
                 {
-                    name: '🔄 `/reload`',
-                    value: 'configファイルを再読み込みします',
-                    inline: false
-                },
-                {
-                    name: '❓ `/help`',
-                    value: 'このヘルプメッセージを表示します',
+                    name: '❓ **その他**',
+                    value: '`/help` - このヘルプメッセージを表示',
                     inline: false
                 }
             )
             .addFields(
                 {
-                    name: '⚙️ 機能説明',
+                    name: '⚙️ **機能説明**',
                     value: '**自動ロール付与**: 新規メンバーが参加した際、設定されたロールを自動で付与\n' +
-                           '**ロールパネル**: 指定したロールの所有者一覧をEmbedで表示\n' +
-                           '**ロールボタン**: ユーザーがボタンを押してロールのつけ外しが可能',
+                           '**ロールパネル**: 指定したロールの所有者一覧をEmbedで表示（動的作成・削除可能）\n' +
+                           '**ロールボタン**: ユーザーがボタンを押してロールのつけ外しが可能（動的作成・削除可能）',
                     inline: false
                 },
                 {
-                    name: '🔧 設定ファイル',
-                    value: 'すべての設定は `src/config.json` で管理されています。\n' +
-                           'パネルやボタンの召喚時に、チャンネルIDとメッセージIDが自動保存されます。',
+                    name: '🗂️ **データ管理**',
+                    value: '**設定ファイル**: `config.json` で自動ロール付与とデフォルト設定を管理\n' +
+                           '**ファイルベース保存**: パネル・ボタンデータは個別JSONファイルで管理\n' +
+                           '**自動更新**: ロール変更時にパネルが自動で更新されます',
                     inline: false
                 },
                 {
-                    name: '🛡️ 権限要件',
-                    value: 'すべてのコマンドはサーバー管理権限が必要です。\n' +
-                           'ボットには「ロールの管理」と「メッセージ送信」権限が必要です。',
+                    name: '🛡️ **権限要件**',
+                    value: '**コマンド実行**: サーバー管理権限が必要\n' +
+                           '**ボット権限**: ロールの管理、メッセージ送信、埋め込みリンク権限が必要\n' +
+                           '**詳細**: README.mdの権限設定セクションを参照',
                     inline: false
                 }
             )
