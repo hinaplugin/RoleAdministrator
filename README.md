@@ -9,18 +9,24 @@ Discord サーバーでロール管理を自動化するボットです。新規
 - 複数のロールを同時に付与可能
 - 複数サーバー対応
 
-### 📋 ロールパネル
+### 📋 ロールパネル（新アーキテクチャ）
 - 指定したロールの所有者一覧をEmbed形式で表示
 - ロールごとに分けて表示（## ロールメンション → メンバー一覧 → メンバー数）
-- `/rolepanel <panelName>` で召喚
+- `/rolepanel create` で動的に作成・設置
+- `/rolepanel delete` でパネルとメッセージを削除
 - 複数ロール対応（1つのパネルで複数ロール表示可能）
 - メンバー数の表示オプション（各ロール個別）
 - 自動更新機能（ロールの変更時）
+- ファイルベース保存（`<DATA_DIR>/<guildId>/panel/<name>.json`）
+- 重複名チェック機能
 
-### 🔘 ロール切り替えボタン
+### 🔘 ロール切り替えボタン（新アーキテクチャ）
 - ユーザーがボタンをクリックしてロールのつけ外しが可能
-- `/rolebutton <buttonName>` で設置
-- カスタマイズ可能なボタンラベルと絵文字
+- `/rolebutton create` で動的に作成・設置
+- `/rolebutton delete` でボタンとメッセージを削除
+- カスタマイズ可能なボタンラベル（オプション、デフォルト設定あり）
+- ファイルベース保存（`<DATA_DIR>/<guildId>/button/<name>.json`）
+- 重複名チェック機能
 
 ### 🛠️ 管理コマンド
 - `/help` - ヘルプ情報表示
@@ -56,6 +62,7 @@ cp .env.example .env
 DISCORD_TOKEN=your_discord_bot_token_here
 CLIENT_ID=your_application_client_id_here
 CONFIG_PATH=./src/config.json
+DATA_DIR=./src/data
 ```
 
 ### 4. ボット権限
@@ -137,6 +144,8 @@ npm run dev
 
 設定ファイルのパスは環境変数 `CONFIG_PATH` で指定できます（デフォルト: `./src/config.json`）
 
+**新アーキテクチャでは、パネルとボタンは動的作成されるため、設定ファイルには基本設定のみを記載します：**
+
 ```json
 {
   "servers": {
@@ -145,58 +154,65 @@ npm run dev
         "enabled": true,
         "roleIds": ["ROLE_ID_1", "ROLE_ID_2"]
       },
-      "rolePanels": {
-        "admin": {
-          "channelId": null,
-          "messageId": null,
-          "roleIds": ["ADMIN_ROLE_ID"],
-          "title": "管理者一覧",
-          "description": "管理者ロールを持っているメンバーの一覧です",
-          "showCount": true
-        },
-        "staff": {
-          "channelId": null,
-          "messageId": null,
-          "roleIds": ["ADMIN_ROLE_ID", "MODERATOR_ROLE_ID"],
-          "title": "スタッフ一覧",
-          "description": "管理者・モデレーターロールを持っているメンバーの一覧です",
-          "showCount": true
-        }
-      },
-      "roleButtons": {
-        "notification": {
-          "channelId": null,
-          "messageId": null,
-          "roleId": "NOTIFICATION_ROLE_ID",
-          "message": "通知設定を変更できます。",
-          "joinLabel": "通知ON",
-          "leaveLabel": "通知OFF",
-          "joinEmoji": "🔔",
-          "leaveEmoji": "🔕"
-        }
+      "defaultButtonSettings": {
+        "joinLabel": "参加",
+        "leaveLabel": "退出",
+        "joinEmoji": "✅",
+        "leaveEmoji": "❌"
       }
     }
   }
 }
 ```
 
+### データ保存
+
+- **環境変数**: `DATA_DIR`でデータ保存場所を指定（デフォルト: `./src/data`）
+- **パネルデータ**: `<DATA_DIR>/<guildId>/panel/<name>.json`
+- **ボタンデータ**: `<DATA_DIR>/<guildId>/button/<name>.json`
+- **サーバー分離**: 各Discordサーバーごとにディレクトリが作成されます
+
 ### 設定のカスタマイズ
 
 1. `src/sample-config.json` を参考に `src/config.json` を作成・編集
 2. サーバーIDを実際のサーバーIDに変更
-3. ロールIDを実際のロールIDに変更
-4. 複数ロールのパネルは `roleIds` 配列で指定
+3. 自動ロール付与のロールIDを設定
+4. デフォルトボタン設定をカスタマイズ（オプション）
 5. `/reload` コマンドで設定を再読み込み
 
 ## 使用方法
 
 ### 基本コマンド
 
+#### パネル管理
+- `/rolepanel create roles:@Admin @Moderator name:staff title:"スタッフ一覧" message:"スタッフロールを持つメンバーの一覧です"` - スタッフパネルを作成
+- `/rolepanel delete name:staff` - スタッフパネルを削除
+
+#### ボタン管理
+- `/rolebutton create role:@通知 name:notification message:"通知設定を変更できます"` - 通知ボタンを作成
+- `/rolebutton create role:@開発者 name:dev message:"開発チームです" joinlabel:"参加する" leavelabel:"退出する"` - カスタムラベルでボタンを作成
+- `/rolebutton delete name:notification` - 通知ボタンを削除
+
+#### その他
 - `/help` - ヘルプを表示
-- `/rolepanel admin` - 管理者パネルを召喚
-- `/rolepanel staff` - スタッフパネルを召喚（複数ロール対応例）
-- `/rolebutton notification` - 通知ボタンを設置
 - `/reload` - 設定を再読み込み
+
+### 使用例
+
+1. **複数ロールのパネルを作成**:
+   ```
+   /rolepanel create roles:@管理者 @モデレーター name:staff title:"スタッフ一覧" message:"管理・運営を行うメンバーです"
+   ```
+
+2. **ロール切り替えボタンを作成**:
+   ```
+   /rolebutton create role:@通知 name:notify message:"通知を受け取るかどうか設定できます"
+   ```
+
+3. **カスタムラベルのボタンを作成**:
+   ```
+   /rolebutton create role:@イベント参加者 name:event message:"イベントに参加する場合はボタンを押してください" joinlabel:"参加します" leavelabel:"不参加"
+   ```
 
 ### 権限要件
 
