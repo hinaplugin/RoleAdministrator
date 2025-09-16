@@ -1,11 +1,14 @@
 const { EmbedBuilder } = require('discord.js');
+const { loadAllPanelsForGuild, savePanelData } = require('./panelStorage');
 
 // Function to update all role panels in a guild (or specific panels for changed roles)
 async function updateRolePanels(client, guild, changedRoleIds = null) {
-    const config = client.config;
-    const serverId = guild.id;
+    const guildId = guild.id;
     
-    if (!config.servers[serverId] || !config.servers[serverId].rolePanels) {
+    // Load all panels for this guild
+    const panels = loadAllPanelsForGuild(guildId);
+    
+    if (Object.keys(panels).length === 0) {
         return;
     }
     
@@ -16,12 +19,10 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
         console.error('Error fetching guild members for panel update:', error);
     }
     
-    const rolePanels = config.servers[serverId].rolePanels;
-    
-    for (const [panelName, panelData] of Object.entries(rolePanels)) {
+    for (const [panelName, panelData] of Object.entries(panels)) {
         // If specific roles are provided, only update panels that contain those roles
         if (changedRoleIds) {
-            const panelRoleIds = Array.isArray(panelData.roleIds) ? panelData.roleIds : [panelData.roleId || panelData.roleIds];
+            const panelRoleIds = panelData.roleIds || [];
             const hasChangedRole = changedRoleIds.some(roleId => panelRoleIds.includes(roleId));
             if (!hasChangedRole) {
                 continue;
@@ -84,8 +85,8 @@ async function createRolePanelEmbed(guild, panelData) {
     // Ensure we have all guild members in cache
     await guild.members.fetch();
     
-    // Support both old roleId format and new roleIds array format
-    const roleIds = Array.isArray(panelData.roleIds) ? panelData.roleIds : [panelData.roleId || panelData.roleIds];
+    // Get role IDs from panel data
+    const roleIds = panelData.roleIds || [];
     
     // Get all roles and find a color for the embed
     const roles = roleIds.map(roleId => guild.roles.cache.get(roleId)).filter(role => role);
@@ -100,7 +101,10 @@ async function createRolePanelEmbed(guild, panelData) {
         .setTitle(panelData.title)
         .setColor(embedColor);
     
-    let description = '';
+    // Add custom description if provided
+    if (panelData.message) {
+        embed.setDescription(panelData.message);
+    }
     
     // Check if any roles have members
     const hasAnyMembers = roles.some(role => 
@@ -108,7 +112,11 @@ async function createRolePanelEmbed(guild, panelData) {
     );
     
     if (!hasAnyMembers) {
-        description = 'このロールを持っているメンバーはいません。';
+        embed.addFields({
+            name: 'メンバー',
+            value: 'このロールを持っているメンバーはいません。',
+            inline: false
+        });
     } else {
         // Display each role and its members separately
         for (const role of roles) {
@@ -117,29 +125,26 @@ async function createRolePanelEmbed(guild, panelData) {
             );
             
             if (roleMembers.size > 0) {
-                description += `## ${role}\n\n`;
-                
                 const memberList = roleMembers.map(member => `${member}`).join(' ');
-                description += memberList;
+                let fieldValue = memberList;
                 
                 if (panelData.showCount) {
-                    description += `\n**メンバー数:** ${roleMembers.size}`;
+                    fieldValue += `\n\n**メンバー数:** ${roleMembers.size}`;
                 }
                 
-                description += '\n\n';
+                // Discord field value limit is 1024 characters
+                if (fieldValue.length > 1024) {
+                    fieldValue = fieldValue.substring(0, 1021) + '...';
+                }
+                
+                embed.addFields({
+                    name: `## ${role.name}`,
+                    value: fieldValue,
+                    inline: false
+                });
             }
         }
-        
-        // Remove trailing newlines
-        description = description.trim();
     }
-    
-    // Discord embed description limit is 4096 characters
-    if (description.length > 4096) {
-        description = description.substring(0, 4093) + '...';
-    }
-    
-    embed.setDescription(description);
     
     embed.setTimestamp();
     
