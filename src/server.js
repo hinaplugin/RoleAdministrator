@@ -13,42 +13,41 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Load commands
+// コマンドを読み込み
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    
+
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
-        
+
         if ('data' in command && 'execute' in command) {
             client.commands.set(command.data.name, command);
-            console.log(`Loaded command: ${command.data.name}`);
+            console.log(`コマンドを読み込みました: ${command.data.name}`);
         } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+            console.log(`[警告] ${filePath} のコマンドに必要な "data" または "execute" プロパティがありません。`);
         }
     }
 }
 
-// Load events
+// イベントを読み込み
 const eventsPath = path.join(__dirname, 'events');
 if (fs.existsSync(eventsPath)) {
     const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
-    
+
     for (const file of eventFiles) {
         const filePath = path.join(eventsPath, file);
         const event = require(filePath);
-        
+
         if (event.once) {
             client.once(event.name, (...args) => event.execute(...args));
         } else {
             client.on(event.name, (...args) => event.execute(...args));
         }
-        console.log(`Loaded event: ${event.name}`);
+        console.log(`イベントを読み込みました: ${event.name}`);
     }
 }
 
-
-// Login to Discord
+// Discordにログイン
 client.login(process.env.DISCORD_TOKEN);
