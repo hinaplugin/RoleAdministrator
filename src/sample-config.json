@@ -31,17 +31,11 @@
           "showCount": true
         }
       },
-      "roleButtons": {
-        "notification": {
-          "channelId": null,
-          "messageId": null,
-          "roleId": "NOTIFICATION_ROLE_ID",
-          "message": "通知を受け取る設定を変更できます。\n通知を受け取りたい場合は「通知ON」、受け取りたくない場合は「通知OFF」をクリックしてください。",
-          "joinLabel": "通知ON",
-          "leaveLabel": "通知OFF",
-          "joinEmoji": "🔔",
-          "leaveEmoji": "🔕"
-        }
+      "defaultButtonSettings": {
+        "joinLabel": "参加",
+        "leaveLabel": "退出",
+        "joinEmoji": "✅",
+        "leaveEmoji": "❌"
       }
     }
   }

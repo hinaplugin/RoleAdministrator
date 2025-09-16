@@ -35,10 +35,12 @@ module.exports = {
         } else if (interaction.isButton()) {
             // Handle button interactions for role buttons
             const customId = interaction.customId;
-            
+
             if (customId.startsWith('role_join_') || customId.startsWith('role_leave_')) {
                 const action = customId.startsWith('role_join_') ? 'join' : 'leave';
-                const roleId = customId.split('_')[2];
+                const parts = customId.split('_');
+                const roleId = parts[2];
+                const buttonName = parts.slice(3).join('_');
                 
                 try {
                     const role = interaction.guild.roles.cache.get(roleId);
