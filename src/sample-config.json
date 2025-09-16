@@ -5,32 +5,6 @@
         "enabled": false,
         "roleIds": []
       },
-      "rolePanels": {
-        "admin": {
-          "channelId": null,
-          "messageId": null,
-          "roleIds": ["ADMIN_ROLE_ID"],
-          "title": "管理者一覧",
-          "description": "管理者ロールを持っているメンバーの一覧です",
-          "showCount": true
-        },
-        "moderator": {
-          "channelId": null,
-          "messageId": null,
-          "roleIds": ["MODERATOR_ROLE_ID"],
-          "title": "モデレーター一覧",
-          "description": "モデレーターロールを持っているメンバーの一覧です",
-          "showCount": true
-        },
-        "staff": {
-          "channelId": null,
-          "messageId": null,
-          "roleIds": ["ADMIN_ROLE_ID", "MODERATOR_ROLE_ID"],
-          "title": "スタッフ一覧",
-          "description": "管理者・モデレーターロールを持っているメンバーの一覧です",
-          "showCount": true
-        }
-      },
       "defaultButtonSettings": {
         "joinLabel": "参加",
         "leaveLabel": "退出",
