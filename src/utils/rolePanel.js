@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const { loadAllPanelsForGuild, savePanelData } = require('./panelStorage');
+const { loadAllPanelsForGuild } = require('./panelStorage');
 
 // サーバー内のすべてのロールパネルを更新する関数（特定のロールが変更された場合はそのパネルのみ）
 async function updateRolePanels(client, guild, changedRoleIds = null) {
@@ -47,13 +47,12 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
                 const botMember = guild.members.cache.get(guild.client.user.id);
                 const channelPerms = channel.permissionsFor(botMember);
                 const canSendMessages = channelPerms.has('SendMessages');
-                const canManageMessages = channelPerms.has('ManageMessages');
                 const canEmbedLinks = channelPerms.has('EmbedLinks');
                 
                 if (!canSendMessages) {
                     console.error(`❌ チャンネル #${channel.name} (${channel.id}) でボットにメッセージ送信権限がありません`);
                     console.error(`チャンネルタイプ: ${channel.type}, 親カテゴリ: ${channel.parent?.name || 'なし'}`);
-                    console.error(`権限 - 送信: ${canSendMessages}, 管理: ${canManageMessages}, 埋め込み: ${canEmbedLinks}`);
+                    console.error(`権限 - 送信: ${canSendMessages}, 埋め込み: ${canEmbedLinks}`);
                     console.error('以下を確認してください:');
                     console.error('1. サーバー設定でのボットロール権限');
                     console.error('2. チャンネル固有の権限設定');
@@ -92,10 +91,6 @@ async function createRolePanelEmbed(guild, panelData) {
     const roles = roleIds.map(roleId => guild.roles.cache.get(roleId)).filter(role => role);
     const embedColor = roles.find(role => role.color !== 0)?.color || 0x0099FF;
     
-    // 指定されたロールのうち少なくとも1つを持つすべてのメンバーを取得
-    const members = guild.members.cache.filter(member => 
-        roleIds.some(roleId => member.roles.cache.has(roleId))
-    );
     
     const embed = new EmbedBuilder()
         .setTitle(panelData.title)

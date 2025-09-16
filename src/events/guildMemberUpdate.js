@@ -5,13 +5,6 @@ module.exports = {
     name: Events.GuildMemberUpdate,
     async execute(oldMember, newMember) {
         const client = newMember.client;
-        const config = client.config;
-        const serverId = newMember.guild.id;
-        
-        // Check if server configuration exists
-        if (!config.servers[serverId]) {
-            return;
-        }
         
         // Ensure we have fresh member data
         try {
