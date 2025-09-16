@@ -56,7 +56,7 @@ async function handleCreateCommand(interaction) {
     
     const guildId = interaction.guild.id;
     
-    // Validate panel name (should be filesystem-safe)
+    // パネル名の検証（ファイルシステム安全な文字のみ）
     if (!/^[a-zA-Z0-9_-]+$/.test(panelName)) {
         await interaction.reply({
             content: 'パネル名は英数字、ハイフン、アンダースコアのみ使用できます。',
@@ -65,7 +65,7 @@ async function handleCreateCommand(interaction) {
         return;
     }
     
-    // Parse role mentions and IDs
+    // ロールメンションとIDを解析
     const roleIds = parseRoles(rolesInput, interaction.guild);
     
     if (roleIds.length === 0) {
@@ -76,7 +76,7 @@ async function handleCreateCommand(interaction) {
         return;
     }
     
-    // Check if all roles exist
+    // すべてのロールが存在するかチェック
     const invalidRoles = roleIds.filter(roleId => !interaction.guild.roles.cache.get(roleId));
     if (invalidRoles.length > 0) {
         await interaction.reply({
@@ -86,10 +86,10 @@ async function handleCreateCommand(interaction) {
         return;
     }
     
-    // Create panel data
+    // パネルデータを作成
     const panelData = {
         channelId: interaction.channel.id,
-        messageId: null, // Will be set after message is sent
+        messageId: null, // メッセージ送信後に設定
         roleIds: roleIds,
         title: title,
         message: message,
@@ -98,24 +98,24 @@ async function handleCreateCommand(interaction) {
         updatedAt: new Date().toISOString()
     };
     
-    // Create embed
+    // Embedを作成
     const embed = await createRolePanelEmbed(interaction.guild, panelData);
     
-    // Send the panel
+    // パネルを送信
     const sentMessage = await interaction.reply({
         embeds: [embed],
         fetchReply: true
     });
     
-    // Update panel data with message ID
+    // メッセージIDでパネルデータを更新
     panelData.messageId = sentMessage.id;
     
-    // Save panel data to file
+    // パネルデータをファイルに保存
     const saved = savePanelData(guildId, panelName, panelData);
     
     if (saved) {
-        console.log(`Role panel "${panelName}" created by ${interaction.user.tag} in ${interaction.guild.name}`);
-        console.log(`Roles: ${roleIds.map(id => interaction.guild.roles.cache.get(id)?.name || id).join(', ')}`);
+        console.log(`ロールパネル "${panelName}" を ${interaction.user.tag} が ${interaction.guild.name} で作成しました`);
+        console.log(`ロール: ${roleIds.map(id => interaction.guild.roles.cache.get(id)?.name || id).join(', ')}`);
     } else {
         await interaction.followUp({
             content: '⚠️ パネルは作成されましたが、データの保存に失敗しました。自動更新が動作しない可能性があります。',
@@ -127,24 +127,24 @@ async function handleCreateCommand(interaction) {
 function parseRoles(rolesInput, guild) {
     const roleIds = [];
     
-    // Split by spaces and process each part
+    // スペースで分割して各部分を処理
     const parts = rolesInput.trim().split(/\s+/);
     
     for (const part of parts) {
-        // Check if it's a role mention (<@&id>)
+        // ロールメンション (<@&id>) かチェック
         const mentionMatch = part.match(/^<@&(\d+)>$/);
         if (mentionMatch) {
             roleIds.push(mentionMatch[1]);
             continue;
         }
         
-        // Check if it's a role ID (numeric)
+        // ロールID（数字）かチェック
         if (/^\d+$/.test(part)) {
             roleIds.push(part);
             continue;
         }
         
-        // Try to find role by name
+        // ロール名でロールを検索
         const roleByName = guild.roles.cache.find(role => 
             role.name.toLowerCase() === part.toLowerCase()
         );
@@ -153,6 +153,6 @@ function parseRoles(rolesInput, guild) {
         }
     }
     
-    // Remove duplicates
+    // 重複を除去
     return [...new Set(roleIds)];
 }

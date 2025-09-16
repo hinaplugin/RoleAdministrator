@@ -1,26 +1,26 @@
 const { EmbedBuilder } = require('discord.js');
 const { loadAllPanelsForGuild, savePanelData } = require('./panelStorage');
 
-// Function to update all role panels in a guild (or specific panels for changed roles)
+// サーバー内のすべてのロールパネルを更新する関数（特定のロールが変更された場合はそのパネルのみ）
 async function updateRolePanels(client, guild, changedRoleIds = null) {
     const guildId = guild.id;
     
-    // Load all panels for this guild
+    // このサーバーのすべてのパネルを読み込み
     const panels = loadAllPanelsForGuild(guildId);
     
     if (Object.keys(panels).length === 0) {
         return;
     }
     
-    // Ensure we have fresh member data before updating panels
+    // パネル更新前に最新のメンバーデータを取得
     try {
         await guild.members.fetch();
     } catch (error) {
-        console.error('Error fetching guild members for panel update:', error);
+        console.error('パネル更新用のサーバーメンバー取得エラー:', error);
     }
     
     for (const [panelName, panelData] of Object.entries(panels)) {
-        // If specific roles are provided, only update panels that contain those roles
+        // 特定のロールが指定されている場合、そのロールを含むパネルのみ更新
         if (changedRoleIds) {
             const panelRoleIds = panelData.roleIds || [];
             const hasChangedRole = changedRoleIds.some(roleId => panelRoleIds.includes(roleId));
@@ -33,17 +33,17 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
             try {
                 const channel = guild.channels.cache.get(panelData.channelId);
                 if (!channel) {
-                    console.error(`Channel not found: ${panelData.channelId}`);
+                    console.error(`チャンネルが見つかりません: ${panelData.channelId}`);
                     continue;
                 }
                 
                 const message = await channel.messages.fetch(panelData.messageId);
                 if (!message) {
-                    console.error(`Message not found: ${panelData.messageId}`);
+                    console.error(`メッセージが見つかりません: ${panelData.messageId}`);
                     continue;
                 }
                 
-                // Check bot permissions
+                // ボット権限の確認
                 const botMember = guild.members.cache.get(guild.client.user.id);
                 const channelPerms = channel.permissionsFor(botMember);
                 const canSendMessages = channelPerms.has('SendMessages');
@@ -51,48 +51,48 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
                 const canEmbedLinks = channelPerms.has('EmbedLinks');
                 
                 if (!canSendMessages) {
-                    console.error(`❌ Bot lacks SendMessages permission in channel #${channel.name} (${channel.id})`);
-                    console.error(`Channel type: ${channel.type}, Parent: ${channel.parent?.name || 'None'}`);
-                    console.error(`Permissions - Send: ${canSendMessages}, Manage: ${canManageMessages}, Embed: ${canEmbedLinks}`);
-                    console.error('Please check:');
-                    console.error('1. Bot role permissions in server settings');
-                    console.error('2. Channel-specific permission overrides');
-                    console.error('3. Category channel permission inheritance');
+                    console.error(`❌ チャンネル #${channel.name} (${channel.id}) でボットにメッセージ送信権限がありません`);
+                    console.error(`チャンネルタイプ: ${channel.type}, 親カテゴリ: ${channel.parent?.name || 'なし'}`);
+                    console.error(`権限 - 送信: ${canSendMessages}, 管理: ${canManageMessages}, 埋め込み: ${canEmbedLinks}`);
+                    console.error('以下を確認してください:');
+                    console.error('1. サーバー設定でのボットロール権限');
+                    console.error('2. チャンネル固有の権限設定');
+                    console.error('3. カテゴリチャンネルからの権限継承');
                     continue;
                 }
                 
                 if (!canEmbedLinks) {
-                    console.error(`❌ Bot lacks EmbedLinks permission in channel #${channel.name}`);
-                    console.error('Role panel will not display properly without this permission.');
-                    console.error('Please grant the bot "埋め込みリンク" (Embed Links) permission in:');
-                    console.error('1. Server Settings → Roles → Bot Role → Embed Links');
-                    console.error('2. Or Channel Settings → Permissions → Bot → Embed Links');
+                    console.error(`❌ チャンネル #${channel.name} でボットに埋め込みリンク権限がありません`);
+                    console.error('この権限がないとロールパネルが正常に表示されません。');
+                    console.error('以下の場所でボットに「埋め込みリンク」権限を付与してください:');
+                    console.error('1. サーバー設定 → ロール → ボットロール → 埋め込みリンク');
+                    console.error('2. または チャンネル設定 → 権限 → ボット → 埋め込みリンク');
                     continue;
                 }
                 
                 const embed = await createRolePanelEmbed(guild, panelData);
                 await message.edit({ embeds: [embed] });
-                console.log(`Updated role panel ${panelName} in ${guild.name}`);
+                console.log(`ロールパネル ${panelName} を ${guild.name} で更新しました`);
             } catch (error) {
-                console.error(`Error updating role panel ${panelName}:`, error);
+                console.error(`ロールパネル ${panelName} の更新エラー:`, error);
             }
         }
     }
 }
 
-// Function to create role panel embed
+// ロールパネルのEmbed作成関数
 async function createRolePanelEmbed(guild, panelData) {
-    // Ensure we have all guild members in cache
+    // すべてのサーバーメンバーをキャッシュに確保
     await guild.members.fetch();
     
-    // Get role IDs from panel data
+    // パネルデータからロールIDを取得
     const roleIds = panelData.roleIds || [];
     
-    // Get all roles and find a color for the embed
+    // すべてのロールを取得してEmbedの色を決定
     const roles = roleIds.map(roleId => guild.roles.cache.get(roleId)).filter(role => role);
     const embedColor = roles.find(role => role.color !== 0)?.color || 0x0099FF;
     
-    // Get all members who have at least one of the specified roles
+    // 指定されたロールのうち少なくとも1つを持つすべてのメンバーを取得
     const members = guild.members.cache.filter(member => 
         roleIds.some(roleId => member.roles.cache.has(roleId))
     );
@@ -101,12 +101,12 @@ async function createRolePanelEmbed(guild, panelData) {
         .setTitle(panelData.title)
         .setColor(embedColor);
     
-    // Add custom description if provided
+    // カスタム説明文が提供されている場合は追加
     if (panelData.message) {
         embed.setDescription(panelData.message);
     }
     
-    // Check if any roles have members
+    // いずれかのロールにメンバーがいるかチェック
     const hasAnyMembers = roles.some(role => 
         guild.members.cache.some(member => member.roles.cache.has(role.id))
     );
@@ -118,7 +118,7 @@ async function createRolePanelEmbed(guild, panelData) {
             inline: false
         });
     } else {
-        // Display each role and its members separately
+        // 各ロールとそのメンバーを個別に表示
         for (const role of roles) {
             const roleMembers = guild.members.cache.filter(member => 
                 member.roles.cache.has(role.id)
@@ -132,7 +132,7 @@ async function createRolePanelEmbed(guild, panelData) {
                     fieldValue += `\n\n**メンバー数:** ${roleMembers.size}`;
                 }
                 
-                // Discord field value limit is 1024 characters
+                // Discordのフィールド値制限は1024文字
                 if (fieldValue.length > 1024) {
                     fieldValue = fieldValue.substring(0, 1021) + '...';
                 }

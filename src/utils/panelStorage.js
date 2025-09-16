@@ -1,24 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 
-// Get data directory from environment variable or default
+// 環境変数またはデフォルトからデータディレクトリを取得
 function getDataDirectory() {
     return process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 }
 
-// Get guild panel directory
+// サーバーのパネルディレクトリを取得
 function getGuildPanelDirectory(guildId) {
     return path.join(getDataDirectory(), guildId, 'panel');
 }
 
-// Ensure directory exists
+// ディレクトリの存在を確認
 function ensureDirectory(dirPath) {
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
     }
 }
 
-// Save panel data
+// パネルデータを保存
 function savePanelData(guildId, panelName, panelData) {
     try {
         const panelDir = getGuildPanelDirectory(guildId);
@@ -31,15 +31,15 @@ function savePanelData(guildId, panelName, panelData) {
         };
         
         fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2));
-        console.log(`Panel data saved: ${guildId}/${panelName}`);
+        console.log(`パネルデータを保存しました: ${guildId}/${panelName}`);
         return true;
     } catch (error) {
-        console.error(`Error saving panel data for ${guildId}/${panelName}:`, error);
+        console.error(`${guildId}/${panelName} のパネルデータ保存エラー:`, error);
         return false;
     }
 }
 
-// Load panel data
+// パネルデータを読み込み
 function loadPanelData(guildId, panelName) {
     try {
         const filePath = path.join(getGuildPanelDirectory(guildId), `${panelName}.json`);
@@ -51,12 +51,12 @@ function loadPanelData(guildId, panelName) {
         const data = fs.readFileSync(filePath, 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        console.error(`Error loading panel data for ${guildId}/${panelName}:`, error);
+        console.error(`${guildId}/${panelName} のパネルデータ読み込みエラー:`, error);
         return null;
     }
 }
 
-// Get all panel names for a guild
+// サーバーのすべてのパネル名を取得
 function getAllPanelNames(guildId) {
     try {
         const panelDir = getGuildPanelDirectory(guildId);
@@ -70,12 +70,12 @@ function getAllPanelNames(guildId) {
             .filter(file => file.endsWith('.json'))
             .map(file => path.basename(file, '.json'));
     } catch (error) {
-        console.error(`Error loading panel names for guild ${guildId}:`, error);
+        console.error(`サーバー ${guildId} のパネル名読み込みエラー:`, error);
         return [];
     }
 }
 
-// Load all panels for a guild
+// サーバーのすべてのパネルを読み込み
 function loadAllPanelsForGuild(guildId) {
     const panels = {};
     const panelNames = getAllPanelNames(guildId);
@@ -90,20 +90,20 @@ function loadAllPanelsForGuild(guildId) {
     return panels;
 }
 
-// Delete panel data
+// パネルデータを削除
 function deletePanelData(guildId, panelName) {
     try {
         const filePath = path.join(getGuildPanelDirectory(guildId), `${panelName}.json`);
         
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
-            console.log(`Panel data deleted: ${guildId}/${panelName}`);
+            console.log(`パネルデータを削除しました: ${guildId}/${panelName}`);
             return true;
         }
         
         return false;
     } catch (error) {
-        console.error(`Error deleting panel data for ${guildId}/${panelName}:`, error);
+        console.error(`${guildId}/${panelName} のパネルデータ削除エラー:`, error);
         return false;
     }
 }
