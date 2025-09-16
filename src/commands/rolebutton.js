@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, PermissionFlagsBits } = require('discord.js');
-const { isButtonNameExists, saveButtonData } = require('../utils/panelStorage');
+const { isButtonNameExists, saveButtonData, loadButtonData, deleteButtonData } = require('../utils/panelStorage');
 const fs = require('fs');
 const path = require('path');
 
@@ -62,6 +62,16 @@ module.exports = {
                         .setRequired(false)
                 )
         )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('delete')
+                .setDescription('ボタンを削除します')
+                .addStringOption(option =>
+                    option.setName('name')
+                        .setDescription('削除するボタン名')
+                        .setRequired(true)
+                )
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
     async execute(interaction) {
@@ -69,6 +79,8 @@ module.exports = {
 
         if (subcommand === 'create') {
             await handleCreateCommand(interaction);
+        } else if (subcommand === 'delete') {
+            await handleDeleteCommand(interaction);
         }
     }
 };
@@ -152,6 +164,68 @@ async function handleCreateCommand(interaction) {
     } else {
         await interaction.followUp({
             content: '⚠️ ボタンは作成されましたが、データの保存に失敗しました。',
+            ephemeral: true
+        });
+    }
+}
+
+async function handleDeleteCommand(interaction) {
+    const buttonName = interaction.options.getString('name');
+    const guildId = interaction.guild.id;
+
+    // ボタン名の検証
+    if (!/^[a-zA-Z0-9_-]+$/.test(buttonName)) {
+        await interaction.reply({
+            content: 'ボタン名は英数字、ハイフン、アンダースコアのみ使用できます。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // ボタンの存在確認
+    const buttonData = loadButtonData(guildId, buttonName);
+    if (!buttonData) {
+        await interaction.reply({
+            content: `ボタン "${buttonName}" が見つかりません。`,
+            ephemeral: true
+        });
+        return;
+    }
+
+    // メッセージの削除を試行
+    let messageDeleted = false;
+    if (buttonData.channelId && buttonData.messageId) {
+        try {
+            const channel = interaction.guild.channels.cache.get(buttonData.channelId);
+            if (channel) {
+                const message = await channel.messages.fetch(buttonData.messageId);
+                if (message) {
+                    await message.delete();
+                    messageDeleted = true;
+                }
+            }
+        } catch (error) {
+            console.error(`ボタンメッセージの削除エラー: ${guildId}/${buttonName}:`, error);
+        }
+    }
+
+    // ボタンデータの削除
+    const deleted = deleteButtonData(guildId, buttonName);
+
+    if (deleted) {
+        const statusMessage = messageDeleted
+            ? `ボタン "${buttonName}" とメッセージを削除しました。`
+            : `ボタン "${buttonName}" を削除しました。（メッセージの削除は失敗しました）`;
+
+        await interaction.reply({
+            content: statusMessage,
+            ephemeral: true
+        });
+
+        console.log(`ロールボタン "${buttonName}" を ${interaction.user.tag} が ${interaction.guild.name} で削除しました`);
+    } else {
+        await interaction.reply({
+            content: `ボタン "${buttonName}" の削除に失敗しました。`,
             ephemeral: true
         });
     }

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { createRolePanelEmbed } = require('../utils/rolePanel');
-const { isPanelNameExists, savePanelData } = require('../utils/panelStorage');
+const { isPanelNameExists, savePanelData, loadPanelData, deletePanelData } = require('../utils/panelStorage');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,13 +36,25 @@ module.exports = {
                         .setRequired(false)
                 )
         )
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('delete')
+                .setDescription('パネルを削除します')
+                .addStringOption(option =>
+                    option.setName('name')
+                        .setDescription('削除するパネル名')
+                        .setRequired(true)
+                )
+        )
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
     
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
-        
+
         if (subcommand === 'create') {
             await handleCreateCommand(interaction);
+        } else if (subcommand === 'delete') {
+            await handleDeleteCommand(interaction);
         }
     }
 };
@@ -164,4 +176,66 @@ function parseRoles(rolesInput, guild) {
     
     // 重複を除去
     return [...new Set(roleIds)];
+}
+
+async function handleDeleteCommand(interaction) {
+    const panelName = interaction.options.getString('name');
+    const guildId = interaction.guild.id;
+
+    // パネル名の検証
+    if (!/^[a-zA-Z0-9_-]+$/.test(panelName)) {
+        await interaction.reply({
+            content: 'パネル名は英数字、ハイフン、アンダースコアのみ使用できます。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // パネルの存在確認
+    const panelData = loadPanelData(guildId, panelName);
+    if (!panelData) {
+        await interaction.reply({
+            content: `パネル "${panelName}" が見つかりません。`,
+            ephemeral: true
+        });
+        return;
+    }
+
+    // メッセージの削除を試行
+    let messageDeleted = false;
+    if (panelData.channelId && panelData.messageId) {
+        try {
+            const channel = interaction.guild.channels.cache.get(panelData.channelId);
+            if (channel) {
+                const message = await channel.messages.fetch(panelData.messageId);
+                if (message) {
+                    await message.delete();
+                    messageDeleted = true;
+                }
+            }
+        } catch (error) {
+            console.error(`パネルメッセージの削除エラー: ${guildId}/${panelName}:`, error);
+        }
+    }
+
+    // パネルデータの削除
+    const deleted = deletePanelData(guildId, panelName);
+
+    if (deleted) {
+        const statusMessage = messageDeleted
+            ? `パネル "${panelName}" とメッセージを削除しました。`
+            : `パネル "${panelName}" を削除しました。（メッセージの削除は失敗しました）`;
+
+        await interaction.reply({
+            content: statusMessage,
+            ephemeral: true
+        });
+
+        console.log(`ロールパネル "${panelName}" を ${interaction.user.tag} が ${interaction.guild.name} で削除しました`);
+    } else {
+        await interaction.reply({
+            content: `パネル "${panelName}" の削除に失敗しました。`,
+            ephemeral: true
+        });
+    }
 }
