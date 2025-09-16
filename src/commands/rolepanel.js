@@ -133,24 +133,29 @@ async function handleCreateCommand(interaction) {
     
     // Embedを作成
     const embed = await createRolePanelEmbed(interaction.guild, panelData);
-    
-    // パネルを送信
-    const sentMessage = await interaction.reply({
-        embeds: [embed],
-        fetchReply: true
+
+    // パネルをチャンネルに直接送信
+    const sentMessage = await interaction.channel.send({
+        embeds: [embed]
     });
-    
+
     // メッセージIDでパネルデータを更新
     panelData.messageId = sentMessage.id;
     
     // パネルデータをファイルに保存
     const saved = savePanelData(guildId, panelName, panelData);
-    
+
     if (saved) {
         console.log(`ロールパネル "${panelName}" を ${interaction.user.tag} が ${interaction.guild.name} で作成しました`);
         console.log(`ロール: ${roleIds.map(id => interaction.guild.roles.cache.get(id)?.name || id).join(', ')}`);
+
+        // 作成完了メッセージをephemeralで送信
+        await interaction.reply({
+            content: `✅ ロールパネル "${panelName}" を作成しました。`,
+            ephemeral: true
+        });
     } else {
-        await interaction.followUp({
+        await interaction.reply({
             content: '⚠️ パネルは作成されましたが、データの保存に失敗しました。自動更新が動作しない可能性があります。',
             ephemeral: true
         });

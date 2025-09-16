@@ -157,11 +157,10 @@ async function handleCreateCommand(interaction) {
     const row = new ActionRowBuilder()
         .addComponents(joinButton, leaveButton);
 
-    // ボタンを送信
-    const sentMessage = await interaction.reply({
+    // ボタンをチャンネルに直接送信
+    const sentMessage = await interaction.channel.send({
         content: message,
-        components: [row],
-        fetchReply: true
+        components: [row]
     });
 
     // メッセージIDでボタンデータを更新
@@ -173,8 +172,14 @@ async function handleCreateCommand(interaction) {
     if (saved) {
         console.log(`ロールボタン "${buttonName}" を ${interaction.user.tag} が ${interaction.guild.name} で作成しました`);
         console.log(`ロール: ${role.name} (${role.id})`);
+
+        // 作成完了メッセージをephemeralで送信
+        await interaction.reply({
+            content: `✅ ロールボタン "${buttonName}" を作成しました。`,
+            ephemeral: true
+        });
     } else {
-        await interaction.followUp({
+        await interaction.reply({
             content: '⚠️ ボタンは作成されましたが、データの保存に失敗しました。',
             ephemeral: true
         });
