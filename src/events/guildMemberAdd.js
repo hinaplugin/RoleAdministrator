@@ -1,54 +1,71 @@
 const { Events } = require('discord.js');
 const { updateRolePanels } = require('../utils/rolePanel');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
     name: Events.GuildMemberAdd,
     async execute(member) {
         const client = member.client;
-        const config = client.config;
         const serverId = member.guild.id;
-        
-        // Check if server configuration exists
-        if (!config.servers[serverId]) {
-            console.log(`No configuration found for server: ${member.guild.name} (${serverId})`);
+
+        // config.jsonを読み込み
+        let config;
+        try {
+            const configPath = process.env.CONFIG_PATH || path.join(__dirname, '..', 'config.json');
+            if (!fs.existsSync(configPath)) {
+                console.log(`設定ファイルが見つかりません: ${configPath}`);
+                return;
+            }
+
+            const configData = fs.readFileSync(configPath, 'utf8');
+            config = JSON.parse(configData);
+        } catch (error) {
+            console.error('config.json読み込みエラー:', error);
+            return;
+        }
+
+        // サーバー設定の存在確認
+        if (!config.servers || !config.servers[serverId]) {
+            console.log(`サーバー設定が見つかりません: ${member.guild.name} (${serverId})`);
             return;
         }
         
         const serverConfig = config.servers[serverId];
         const autoRoleConfig = serverConfig.autoRole;
         
-        // Check if auto-role is enabled
-        if (!autoRoleConfig.enabled || !autoRoleConfig.roleIds || autoRoleConfig.roleIds.length === 0) {
+        // 自動ロール付与が有効かチェック
+        if (!autoRoleConfig || !autoRoleConfig.enabled || !autoRoleConfig.roleIds || autoRoleConfig.roleIds.length === 0) {
             return;
         }
+
+        console.log(`新しいメンバーが参加しました: ${member.user.tag} (${member.guild.name})`);
         
-        console.log(`New member joined: ${member.user.tag} in ${member.guild.name}`);
-        
-        // Process each role ID
+        // 各ロールIDを処理
         for (const roleId of autoRoleConfig.roleIds) {
             try {
                 const role = member.guild.roles.cache.get(roleId);
-                
+
                 if (!role) {
-                    console.error(`Role not found: ${roleId} in ${member.guild.name}`);
+                    console.error(`ロールが見つかりません: ${roleId} (${member.guild.name})`);
                     continue;
                 }
-                
-                // Check if bot has permission to manage this role
+
+                // ボットがこのロールを管理する権限があるかチェック
                 if (role.position >= member.guild.members.me.roles.highest.position) {
-                    console.error(`Cannot assign role ${role.name}: Bot's highest role is not high enough`);
+                    console.error(`ロール付与失敗 ${role.name}: ボットの最高ロールが不十分です`);
                     continue;
                 }
-                
+
                 await member.roles.add(roleId);
-                console.log(`Successfully added role ${role.name} to ${member.user.tag}`);
-                
+                console.log(`ロール付与成功: ${member.user.tag} に "${role.name}" を付与`);
+
             } catch (error) {
-                console.error(`Error adding role ${roleId} to ${member.user.tag}:`, error);
+                console.error(`ロール付与エラー ${roleId} -> ${member.user.tag}:`, error);
             }
         }
-        
-        // Update role panels after role assignments
+
+        // ロール付与後にロールパネルを更新
         updateRolePanels(client, member.guild);
     }
 };
