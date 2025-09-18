@@ -40,7 +40,6 @@ module.exports = {
                 const action = customId.startsWith('role_join_') ? 'join' : 'leave';
                 const parts = customId.split('_');
                 const roleId = parts[2];
-                const buttonName = parts.slice(3).join('_');
                 
                 try {
                     const role = interaction.guild.roles.cache.get(roleId);
