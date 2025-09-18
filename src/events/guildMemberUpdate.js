@@ -6,30 +6,42 @@ module.exports = {
     async execute(oldMember, newMember) {
         const client = newMember.client;
         
-        // Ensure we have fresh member data
+        // 最新のメンバーデータを確保
         try {
             await newMember.guild.members.fetch();
         } catch (error) {
-            console.error('Error fetching guild members:', error);
+            console.error('サーバーメンバー取得エラー:', error);
         }
         
-        // Check if roles have changed
+        // ロール変更をチェック
         const oldRoles = oldMember.roles.cache;
         const newRoles = newMember.roles.cache;
-        
+
         if (oldRoles.size !== newRoles.size || !oldRoles.equals(newRoles)) {
-            // Detect which roles have changed
+            // 変更されたロールを検出
             const addedRoles = newRoles.filter(role => !oldRoles.has(role.id));
             const removedRoles = oldRoles.filter(role => !newRoles.has(role.id));
-            
+
+            // ログ出力
+            const userName = newMember.user.tag;
+            const guildName = newMember.guild.name;
+
+            if (addedRoles.size > 0) {
+                const addedRoleNames = addedRoles.map(role => role.name).join(', ');
+                console.log(`ロール付与: ${userName} に "${addedRoleNames}" を付与 (${guildName})`);
+            }
+
+            if (removedRoles.size > 0) {
+                const removedRoleNames = removedRoles.map(role => role.name).join(', ');
+                console.log(`ロール削除: ${userName} から "${removedRoleNames}" を削除 (${guildName})`);
+            }
+
             const changedRoleIds = [
                 ...addedRoles.map(role => role.id),
                 ...removedRoles.map(role => role.id)
             ];
-            
-            console.log(`Role change detected for ${newMember.user.tag} in ${newMember.guild.name}: ${changedRoleIds.join(', ')}`);
-            
-            // Update only role panels for the changed roles
+
+            // 変更されたロールのパネルのみ更新
             updateRolePanels(client, newMember.guild, changedRoleIds);
         }
     }
