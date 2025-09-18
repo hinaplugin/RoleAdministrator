@@ -1,4 +1,4 @@
-const { Events } = require('discord.js');
+const { Events, ActivityType } = require('discord.js');
 
 module.exports = {
     name: Events.ClientReady,
@@ -27,7 +27,7 @@ module.exports = {
         client.user.setPresence({
             activities: [{
                 name: 'ロール管理',
-                type: 0
+                type: ActivityType.Competing
             }],
             status: 'online'
         });
