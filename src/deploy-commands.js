@@ -14,7 +14,7 @@ for (const file of commandFiles) {
     if ('data' in command && 'execute' in command) {
         commands.push(command.data.toJSON());
     } else {
-        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+        console.log(`[警告] ${filePath} のコマンドに必要な "data" または "execute" プロパティがありません。`);
     }
 }
 
@@ -22,14 +22,14 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
     try {
-        console.log(`Started refreshing ${commands.length} application (/) commands.`);
+        console.log(`${commands.length}個のアプリケーション(/)コマンドの更新を開始しました。`);
 
         const data = await rest.put(
             Routes.applicationCommands(process.env.CLIENT_ID),
             { body: commands },
         );
 
-        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+        console.log(`${data.length}個のアプリケーション(/)コマンドの更新が完了しました。`);
     } catch (error) {
         console.error(error);
     }

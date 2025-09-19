@@ -2,7 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const { loadAllPanelsForGuild } = require('./panelStorage');
 
 // サーバー内のすべてのロールパネルを更新する関数（特定のロールが変更された場合はそのパネルのみ）
-async function updateRolePanels(client, guild, changedRoleIds = null) {
+async function updateRolePanels(guild, changedRoleIds = null) {
     const guildId = guild.id;
     
     // このサーバーのすべてのパネルを読み込み
@@ -44,28 +44,15 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
                 }
                 
                 // ボット権限の確認
-                const botMember = guild.members.cache.get(guild.client.user.id);
-                const channelPerms = channel.permissionsFor(botMember);
-                const canSendMessages = channelPerms.has('SendMessages');
-                const canEmbedLinks = channelPerms.has('EmbedLinks');
-                
-                if (!canSendMessages) {
-                    console.error(`❌ チャンネル #${channel.name} (${channel.id}) でボットにメッセージ送信権限がありません`);
-                    console.error(`チャンネルタイプ: ${channel.type}, 親カテゴリ: ${channel.parent?.name || 'なし'}`);
-                    console.error(`権限 - 送信: ${canSendMessages}, 埋め込み: ${canEmbedLinks}`);
-                    console.error('以下を確認してください:');
-                    console.error('1. サーバー設定でのボットロール権限');
-                    console.error('2. チャンネル固有の権限設定');
-                    console.error('3. カテゴリチャンネルからの権限継承');
+                const channelPerms = channel.permissionsFor(guild.members.me);
+
+                if (!channelPerms.has('SendMessages')) {
+                    console.error(`❌ チャンネル #${channel.name} でボットにメッセージ送信権限がありません`);
                     continue;
                 }
-                
-                if (!canEmbedLinks) {
+
+                if (!channelPerms.has('EmbedLinks')) {
                     console.error(`❌ チャンネル #${channel.name} でボットに埋め込みリンク権限がありません`);
-                    console.error('この権限がないとロールパネルが正常に表示されません。');
-                    console.error('以下の場所でボットに「埋め込みリンク」権限を付与してください:');
-                    console.error('1. サーバー設定 → ロール → ボットロール → 埋め込みリンク');
-                    console.error('2. または チャンネル設定 → 権限 → ボット → 埋め込みリンク');
                     continue;
                 }
                 
@@ -83,15 +70,14 @@ async function updateRolePanels(client, guild, changedRoleIds = null) {
 async function createRolePanelEmbed(guild, panelData) {
     // すべてのサーバーメンバーをキャッシュに確保
     await guild.members.fetch();
-    
+
     // パネルデータからロールIDを取得
     const roleIds = panelData.roleIds || [];
-    
+
     // すべてのロールを取得してEmbedの色を決定
     const roles = roleIds.map(roleId => guild.roles.cache.get(roleId)).filter(role => role);
     const embedColor = roles.find(role => role.color !== 0)?.color || 0x0099FF;
-    
-    
+
     const embed = new EmbedBuilder()
         .setTitle(panelData.title)
         .setColor(embedColor);

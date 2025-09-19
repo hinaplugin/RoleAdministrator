@@ -4,8 +4,6 @@ const { updateRolePanels } = require('../utils/rolePanel');
 module.exports = {
     name: Events.GuildMemberUpdate,
     async execute(oldMember, newMember) {
-        const client = newMember.client;
-        
         // 最新のメンバーデータを確保
         try {
             await newMember.guild.members.fetch();
@@ -42,7 +40,7 @@ module.exports = {
             ];
 
             // 変更されたロールのパネルのみ更新
-            updateRolePanels(client, newMember.guild, changedRoleIds);
+            updateRolePanels(newMember.guild, changedRoleIds);
         }
     }
 };

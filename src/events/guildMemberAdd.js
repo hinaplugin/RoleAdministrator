@@ -6,7 +6,6 @@ const path = require('path');
 module.exports = {
     name: Events.GuildMemberAdd,
     async execute(member) {
-        const client = member.client;
         const serverId = member.guild.id;
 
         // config.jsonを読み込み
@@ -66,6 +65,6 @@ module.exports = {
         }
 
         // ロール付与後にロールパネルを更新
-        updateRolePanels(client, member.guild);
+        updateRolePanels(member.guild);
     }
 };
