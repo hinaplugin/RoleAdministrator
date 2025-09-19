@@ -182,6 +182,7 @@ npm run dev
 
 #### パネル管理
 - `/rolepanel create roles:@Admin @Moderator name:staff title:"スタッフ一覧" message:"スタッフロールを持つメンバーの一覧です"` - スタッフパネルを作成
+- `/rolepanel create roles:@開発者 name:dev title:"開発チーム" message:"開発メンバーです" showcount:true` - メンバー数表示ありでパネルを作成
 - `/rolepanel delete name:staff` - スタッフパネルを削除
 - `/rolepanel info` - 全パネルの一覧を表示
 - `/rolepanel info name:staff` - スタッフパネルの詳細情報を表示
@@ -203,12 +204,17 @@ npm run dev
    /rolepanel create roles:@管理者 @モデレーター name:staff title:"スタッフ一覧" message:"管理・運営を行うメンバーです"
    ```
 
-2. **ロール切り替えボタンを作成**:
+2. **メンバー数表示ありのパネルを作成**:
+   ```
+   /rolepanel create roles:@開発者 name:devteam title:"開発チーム" message:"プロジェクトの開発を担当しています" showcount:true
+   ```
+
+3. **ロール切り替えボタンを作成**:
    ```
    /rolebutton create role:@通知 name:notify message:"通知を受け取るかどうか設定できます"
    ```
 
-3. **カスタムラベルのボタンを作成**:
+4. **カスタムラベルのボタンを作成**:
    ```
    /rolebutton create role:@イベント参加者 name:event message:"イベントに参加する場合はボタンを押してください" joinlabel:"参加します" leavelabel:"不参加"
    ```
