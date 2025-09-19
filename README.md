@@ -121,13 +121,9 @@ cp src/sample-config.json src/config.json
 # config.jsonを編集して実際のサーバーIDとロールIDを設定
 ```
 
-### 6. スラッシュコマンドのデプロイ
+### 6. 起動
 
-```bash
-npm run deploy
-```
-
-### 7. 起動
+ボットを起動すると、**自動的にコマンドがDiscordにデプロイされます**：
 
 ```bash
 # 本番環境
@@ -136,6 +132,8 @@ npm start
 # 開発環境（ファイル変更時自動再起動）
 npm run dev
 ```
+
+**Note**: 従来の手動デプロイコマンド（`npm run deploy`）は不要になりました。ボット起動時に自動的に最新のコマンドがDiscordに登録されます。
 
 ## 設定
 
@@ -226,6 +224,7 @@ npm run dev
 - **フレームワーク**: discord.js v14
 - **設定管理**: JSON
 - **環境変数管理**: dotenv
+- **コマンドデプロイ**: 自動化（ボット起動時）
 
 ## プロジェクト情報
 
