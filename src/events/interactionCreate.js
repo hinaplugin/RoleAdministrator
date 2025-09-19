@@ -1,4 +1,4 @@
-const { Events, PermissionFlagsBits } = require('discord.js');
+const { Events } = require('discord.js');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -7,23 +7,14 @@ module.exports = {
             const command = interaction.client.commands.get(interaction.commandName);
 
             if (!command) {
-                console.error(`No command matching ${interaction.commandName} was found.`);
-                return;
-            }
-
-            // Check if user has server management permissions
-            if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-                await interaction.reply({ 
-                    content: 'このコマンドを使用するにはサーバー管理権限が必要です。', 
-                    ephemeral: true 
-                });
+                console.error(`コマンドが見つかりません: ${interaction.commandName}`);
                 return;
             }
 
             try {
                 await command.execute(interaction);
             } catch (error) {
-                console.error('Error executing command:', error);
+                console.error('コマンド実行エラー:', error);
                 const errorMessage = 'コマンドの実行中にエラーが発生しました。';
                 
                 if (interaction.replied || interaction.deferred) {
@@ -84,7 +75,7 @@ module.exports = {
                     }
                     
                 } catch (error) {
-                    console.error('Error handling role button:', error);
+                    console.error('ロールボタン処理エラー:', error);
                     await interaction.reply({ 
                         content: 'ロールの操作中にエラーが発生しました。ボットに十分な権限があるか確認してください。', 
                         ephemeral: true 
