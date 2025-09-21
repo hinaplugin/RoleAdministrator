@@ -127,12 +127,15 @@ async function handleCreateCommand(interaction) {
     // デフォルト設定を取得
     const defaultSettings = getDefaultButtonSettings();
 
+    // メッセージ内の\\nを改行に変換
+    const formattedMessage = message.replace(/\\n/g, '\n');
+
     // ボタンデータを作成
     const buttonData = {
         channelId: interaction.channel.id,
         messageId: null, // メッセージ送信後に設定
         roleId: role.id,
-        message: message,
+        message: formattedMessage,
         joinLabel: joinLabel || defaultSettings.joinLabel,
         leaveLabel: leaveLabel || defaultSettings.leaveLabel,
         joinEmoji: defaultSettings.joinEmoji,
@@ -159,7 +162,7 @@ async function handleCreateCommand(interaction) {
 
     // ボタンをチャンネルに直接送信
     const sentMessage = await interaction.channel.send({
-        content: message,
+        content: formattedMessage,
         components: [row]
     });
 
