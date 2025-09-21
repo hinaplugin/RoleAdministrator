@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const { loadAllPanelsForGuild } = require('./panelStorage');
+const { loadAllPanelsForGuild, savePanelData } = require('./panelStorage');
 
 // サーバー内のすべてのロールパネルを更新する関数（特定のロールが変更された場合はそのパネルのみ）
 async function updateRolePanels(guild, changedRoleIds = null) {
@@ -58,6 +58,10 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 
                 const embed = await createRolePanelEmbed(guild, panelData);
                 await message.edit({ embeds: [embed] });
+
+                // パネルデータのupdatedAtを更新
+                savePanelData(guildId, panelName, panelData);
+
                 console.log(`ロールパネル ${panelName} を ${guild.name} で更新しました`);
             } catch (error) {
                 console.error(`ロールパネル ${panelName} の更新エラー:`, error);
