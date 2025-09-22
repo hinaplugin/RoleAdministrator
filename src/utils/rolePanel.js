@@ -55,10 +55,13 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 console.log(`🔍 [DEBUG] EmbedLinks: ${channelPerms.has('EmbedLinks')}`);
 
                 // スレッド（フォーラム投稿）の場合はSendMessagesInThreadsをチェック
-                const isThread = message.thread !== null;
+                // チャンネルタイプ11はフォーラム投稿（スレッド）
+                const isThread = targetChannel.type === 11 || message.thread !== null;
                 const hasMessagePermission = isThread
                     ? channelPerms.has('SendMessagesInThreads')
                     : channelPerms.has('SendMessages');
+
+                console.log(`🔍 [DEBUG] isThread: ${isThread}, hasMessagePermission: ${hasMessagePermission}`);
 
                 if (!hasMessagePermission) {
                     const permissionName = isThread ? 'SendMessagesInThreads' : 'SendMessages';
