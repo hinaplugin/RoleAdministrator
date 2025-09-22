@@ -47,6 +47,12 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 const targetChannel = message.thread || channel;
                 const channelPerms = targetChannel.permissionsFor(guild.members.me);
 
+                // デバッグ: 権限情報をコンソールに出力
+                console.log(`🔍 [DEBUG] チャンネル権限チェック - ${targetChannel.name} (${targetChannel.type})`);
+                console.log(`🔍 [DEBUG] 権限一覧:`, channelPerms.toArray());
+                console.log(`🔍 [DEBUG] SendMessages: ${channelPerms.has('SendMessages')}`);
+                console.log(`🔍 [DEBUG] EmbedLinks: ${channelPerms.has('EmbedLinks')}`);
+
                 if (!channelPerms.has('SendMessages')) {
                     console.error(`❌ チャンネル #${targetChannel.name} でボットにメッセージ送信権限がありません`);
                     continue;
