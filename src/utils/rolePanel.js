@@ -42,17 +42,18 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                     console.error(`メッセージが見つかりません: ${panelData.messageId}`);
                     continue;
                 }
-                
-                // ボット権限の確認
-                const channelPerms = channel.permissionsFor(guild.members.me);
+
+                // ボット権限の確認（フォーラムチャンネルの場合はスレッドレベルで確認）
+                const targetChannel = message.thread || channel;
+                const channelPerms = targetChannel.permissionsFor(guild.members.me);
 
                 if (!channelPerms.has('SendMessages')) {
-                    console.error(`❌ チャンネル #${channel.name} でボットにメッセージ送信権限がありません`);
+                    console.error(`❌ チャンネル #${targetChannel.name} でボットにメッセージ送信権限がありません`);
                     continue;
                 }
 
                 if (!channelPerms.has('EmbedLinks')) {
-                    console.error(`❌ チャンネル #${channel.name} でボットに埋め込みリンク権限がありません`);
+                    console.error(`❌ チャンネル #${targetChannel.name} でボットに埋め込みリンク権限がありません`);
                     continue;
                 }
                 
