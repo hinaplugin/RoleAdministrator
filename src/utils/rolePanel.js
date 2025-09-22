@@ -47,21 +47,12 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 const targetChannel = message.thread || channel;
                 const channelPerms = targetChannel.permissionsFor(guild.members.me);
 
-                // デバッグ: 権限情報をコンソールに出力
-                console.log(`🔍 [DEBUG] チャンネル権限チェック - ${targetChannel.name} (${targetChannel.type})`);
-                console.log(`🔍 [DEBUG] 権限一覧:`, channelPerms.toArray());
-                console.log(`🔍 [DEBUG] SendMessages: ${channelPerms.has('SendMessages')}`);
-                console.log(`🔍 [DEBUG] SendMessagesInThreads: ${channelPerms.has('SendMessagesInThreads')}`);
-                console.log(`🔍 [DEBUG] EmbedLinks: ${channelPerms.has('EmbedLinks')}`);
-
                 // スレッド（フォーラム投稿）の場合はSendMessagesInThreadsをチェック
                 // チャンネルタイプ11はフォーラム投稿（スレッド）
                 const isThread = targetChannel.type === 11 || message.thread !== null;
                 const hasMessagePermission = isThread
                     ? channelPerms.has('SendMessagesInThreads')
                     : channelPerms.has('SendMessages');
-
-                console.log(`🔍 [DEBUG] isThread: ${isThread}, hasMessagePermission: ${hasMessagePermission}`);
 
                 if (!hasMessagePermission) {
                     const permissionName = isThread ? 'SendMessagesInThreads' : 'SendMessages';
