@@ -16,6 +16,11 @@ function getGuildButtonDirectory(guildId) {
     return path.join(getDataDirectory(), guildId, 'button');
 }
 
+// サーバーのメニューディレクトリを取得
+function getGuildMenuDirectory(guildId) {
+    return path.join(getDataDirectory(), guildId, 'menu');
+}
+
 // ディレクトリの存在を確認
 function ensureDirectory(dirPath) {
     if (!fs.existsSync(dirPath)) {
@@ -225,10 +230,112 @@ function deleteButtonData(guildId, buttonName) {
     }
 }
 
+// メニュー名の重複チェック
+function isMenuNameExists(guildId, menuName) {
+    try {
+        const filePath = path.join(getGuildMenuDirectory(guildId), `${menuName}.json`);
+        return fs.existsSync(filePath);
+    } catch (error) {
+        console.error(`メニュー名重複チェックエラー: ${guildId}/${menuName}:`, error);
+        return false;
+    }
+}
+
+// メニューデータを保存
+function saveMenuData(guildId, menuName, menuData) {
+    try {
+        const menuDir = getGuildMenuDirectory(guildId);
+        ensureDirectory(menuDir);
+
+        const filePath = path.join(menuDir, `${menuName}.json`);
+        const dataToSave = {
+            ...menuData,
+            updatedAt: new Date().toISOString()
+        };
+
+        fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2));
+        console.log(`メニューデータを保存しました: ${guildId}/${menuName}`);
+        return true;
+    } catch (error) {
+        console.error(`${guildId}/${menuName} のメニューデータ保存エラー:`, error);
+        return false;
+    }
+}
+
+// メニューデータを読み込み
+function loadMenuData(guildId, menuName) {
+    try {
+        const filePath = path.join(getGuildMenuDirectory(guildId), `${menuName}.json`);
+
+        if (!fs.existsSync(filePath)) {
+            return null;
+        }
+
+        const data = fs.readFileSync(filePath, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error(`${guildId}/${menuName} のメニューデータ読み込みエラー:`, error);
+        return null;
+    }
+}
+
+// サーバーのすべてのメニュー名を取得
+function getAllMenuNames(guildId) {
+    try {
+        const menuDir = getGuildMenuDirectory(guildId);
+
+        if (!fs.existsSync(menuDir)) {
+            return [];
+        }
+
+        const files = fs.readdirSync(menuDir);
+        return files
+            .filter(file => file.endsWith('.json'))
+            .map(file => path.basename(file, '.json'));
+    } catch (error) {
+        console.error(`サーバー ${guildId} のメニュー名読み込みエラー:`, error);
+        return [];
+    }
+}
+
+// サーバーのすべてのメニューを読み込み
+function loadAllMenusForGuild(guildId) {
+    const menus = {};
+    const menuNames = getAllMenuNames(guildId);
+
+    for (const name of menuNames) {
+        const data = loadMenuData(guildId, name);
+        if (data) {
+            menus[name] = data;
+        }
+    }
+
+    return menus;
+}
+
+// メニューデータを削除
+function deleteMenuData(guildId, menuName) {
+    try {
+        const filePath = path.join(getGuildMenuDirectory(guildId), `${menuName}.json`);
+
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`メニューデータを削除しました: ${guildId}/${menuName}`);
+            return true;
+        }
+
+        return false;
+    } catch (error) {
+        console.error(`${guildId}/${menuName} のメニューデータ削除エラー:`, error);
+        return false;
+    }
+}
+
 module.exports = {
     getDataDirectory,
     getGuildPanelDirectory,
     getGuildButtonDirectory,
+    getGuildMenuDirectory,
     isPanelNameExists,
     savePanelData,
     loadPanelData,
@@ -240,5 +347,11 @@ module.exports = {
     loadButtonData,
     getAllButtonNames,
     loadAllButtonsForGuild,
-    deleteButtonData
+    deleteButtonData,
+    isMenuNameExists,
+    saveMenuData,
+    loadMenuData,
+    getAllMenuNames,
+    loadAllMenusForGuild,
+    deleteMenuData
 };
