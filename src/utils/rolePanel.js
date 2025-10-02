@@ -23,11 +23,8 @@ async function updateRolePanels(guild, changedRoleIds = null) {
 
     // 更新対象のパネルがない場合は終了
     if (panelsToUpdate.length === 0) {
-        console.log(`${guild.name}: 更新対象のパネルなし`);
         return;
     }
-
-    console.log(`${guild.name}: ${panelsToUpdate.length}個のパネルを更新します（キャッシュメンバー: ${guild.members.cache.size}人）`);
 
     for (const [panelName, panelData] of panelsToUpdate) {
         
