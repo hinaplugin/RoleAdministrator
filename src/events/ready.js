@@ -13,7 +13,7 @@ module.exports = {
         
         for (const guild of client.guilds.cache.values()) {
             try {
-                await guild.members.fetch({ time: 60000 });
+                await guild.members.fetch({ timeout: 60000 });
                 console.log(`Cached ${guild.memberCount} members from ${guild.name}`);
             } catch (error) {
                 console.error(`Failed to cache members from ${guild.name}:`, error);

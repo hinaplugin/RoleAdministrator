@@ -7,18 +7,11 @@ async function updateRolePanels(guild, changedRoleIds = null) {
     
     // このサーバーのすべてのパネルを読み込み
     const panels = loadAllPanelsForGuild(guildId);
-    
+
     if (Object.keys(panels).length === 0) {
         return;
     }
-    
-    // パネル更新前に最新のメンバーデータを取得
-    try {
-        await guild.members.fetch({ time: 60000 });
-    } catch (error) {
-        console.error('パネル更新用のサーバーメンバー取得エラー:', error);
-    }
-    
+
     for (const [panelName, panelData] of Object.entries(panels)) {
         // 特定のロールが指定されている場合、そのロールを含むパネルのみ更新
         if (changedRoleIds) {
@@ -82,7 +75,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
 // ロールパネルのEmbed作成関数
 async function createRolePanelEmbed(guild, panelData) {
     // すべてのサーバーメンバーをキャッシュに確保
-    await guild.members.fetch({ time: 60000 });
+    await guild.members.fetch({ timeout: 60000 });
 
     // パネルデータからロールIDを取得
     const roleIds = panelData.roleIds || [];
