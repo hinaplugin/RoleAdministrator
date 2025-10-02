@@ -4,7 +4,7 @@ const { loadAllPanelsForGuild, savePanelData } = require('./panelStorage');
 // サーバー内のすべてのロールパネルを更新する関数（特定のロールが変更された場合はそのパネルのみ）
 async function updateRolePanels(guild, changedRoleIds = null) {
     const guildId = guild.id;
-    
+
     // このサーバーのすべてのパネルを読み込み
     const panels = loadAllPanelsForGuild(guildId);
 
@@ -12,15 +12,29 @@ async function updateRolePanels(guild, changedRoleIds = null) {
         return;
     }
 
-    for (const [panelName, panelData] of Object.entries(panels)) {
-        // 特定のロールが指定されている場合、そのロールを含むパネルのみ更新
-        if (changedRoleIds) {
-            const panelRoleIds = panelData.roleIds || [];
-            const hasChangedRole = changedRoleIds.some(roleId => panelRoleIds.includes(roleId));
-            if (!hasChangedRole) {
-                continue;
-            }
+    // 更新が必要なパネルを事前にフィルタリング
+    const panelsToUpdate = Object.entries(panels).filter(([panelName, panelData]) => {
+        if (!changedRoleIds) {
+            return true; // すべてのパネルを更新
         }
+        const panelRoleIds = panelData.roleIds || [];
+        return changedRoleIds.some(roleId => panelRoleIds.includes(roleId));
+    });
+
+    // 更新対象のパネルがない場合は終了
+    if (panelsToUpdate.length === 0) {
+        return;
+    }
+
+    // 更新対象のパネルがある場合のみメンバーを取得
+    try {
+        await guild.members.fetch({ timeout: 60000 });
+    } catch (error) {
+        console.error('パネル更新用のサーバーメンバー取得エラー:', error);
+        return; // メンバー取得に失敗したら更新をスキップ
+    }
+
+    for (const [panelName, panelData] of panelsToUpdate) {
         
         if (panelData.channelId && panelData.messageId) {
             try {
@@ -74,8 +88,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
 
 // ロールパネルのEmbed作成関数
 async function createRolePanelEmbed(guild, panelData) {
-    // すべてのサーバーメンバーをキャッシュに確保
-    await guild.members.fetch({ timeout: 60000 });
+    // メンバーデータはキャッシュから使用（既にfetch済みを想定）
 
     // パネルデータからロールIDを取得
     const roleIds = panelData.roleIds || [];

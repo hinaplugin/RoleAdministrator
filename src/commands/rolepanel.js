@@ -131,6 +131,13 @@ async function handleCreateCommand(interaction) {
         updatedAt: new Date().toISOString()
     };
     
+    // パネル作成時はメンバーを取得してからEmbedを作成
+    try {
+        await interaction.guild.members.fetch({ timeout: 60000 });
+    } catch (error) {
+        console.error('メンバー取得エラー:', error);
+    }
+
     // Embedを作成
     const embed = await createRolePanelEmbed(interaction.guild, panelData);
 
