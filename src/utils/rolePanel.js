@@ -27,16 +27,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
         return;
     }
 
-    console.log(`${guild.name}: ${panelsToUpdate.length}個のパネルを更新します`);
-
-    // 更新対象のパネルがある場合のみメンバーを取得
-    try {
-        await guild.members.fetch({ timeout: 60000 });
-        console.log(`${guild.name}: メンバー取得完了`);
-    } catch (error) {
-        console.error('パネル更新用のサーバーメンバー取得エラー:', error);
-        return; // メンバー取得に失敗したら更新をスキップ
-    }
+    console.log(`${guild.name}: ${panelsToUpdate.length}個のパネルを更新します（キャッシュメンバー: ${guild.members.cache.size}人）`);
 
     for (const [panelName, panelData] of panelsToUpdate) {
         
