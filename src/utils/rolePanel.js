@@ -14,7 +14,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
     
     // パネル更新前に最新のメンバーデータを取得
     try {
-        await guild.members.fetch();
+        await guild.members.fetch({ time: 60000 });
     } catch (error) {
         console.error('パネル更新用のサーバーメンバー取得エラー:', error);
     }
@@ -82,7 +82,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
 // ロールパネルのEmbed作成関数
 async function createRolePanelEmbed(guild, panelData) {
     // すべてのサーバーメンバーをキャッシュに確保
-    await guild.members.fetch();
+    await guild.members.fetch({ time: 60000 });
 
     // パネルデータからロールIDを取得
     const roleIds = panelData.roleIds || [];

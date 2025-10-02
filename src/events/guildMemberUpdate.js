@@ -6,7 +6,7 @@ module.exports = {
     async execute(oldMember, newMember) {
         // 最新のメンバーデータを確保
         try {
-            await newMember.guild.members.fetch();
+            await newMember.guild.members.fetch({ time: 60000 });
         } catch (error) {
             console.error('サーバーメンバー取得エラー:', error);
         }
