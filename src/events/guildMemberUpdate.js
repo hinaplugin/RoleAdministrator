@@ -9,13 +9,6 @@ module.exports = {
         const newRoles = newMember.roles.cache;
 
         if (oldRoles.size !== newRoles.size || !oldRoles.equals(newRoles)) {
-            // 最新のメンバーデータを確保（ロール変更があった場合のみ）
-            try {
-                await newMember.guild.members.fetch({ timeout: 60000 });
-            } catch (error) {
-                console.error('サーバーメンバー取得エラー:', error);
-            }
-
             // 変更されたロールを検出
             const addedRoles = newRoles.filter(role => !oldRoles.has(role.id));
             const removedRoles = oldRoles.filter(role => !newRoles.has(role.id));
