@@ -33,7 +33,7 @@ module.exports = {
             ];
 
             // 変更されたロールのパネルのみ更新
-            updateRolePanels(newMember.guild, changedRoleIds);
+            await updateRolePanels(newMember.guild, changedRoleIds);
         }
     }
 };
