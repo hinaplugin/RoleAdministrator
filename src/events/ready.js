@@ -1,4 +1,4 @@
-const { Events, ActivityType } = require('discord.js');
+const { Events, ActivityType, ChannelType } = require('discord.js');
 
 module.exports = {
     name: Events.ClientReady,
@@ -20,6 +20,41 @@ module.exports = {
                 // チャンネルキャッシュ（ギルド取得時に自動キャッシュされるが明示的に取得）
                 await guild.channels.fetch();
                 console.log(`Cached ${guild.channels.cache.size} channels from ${guild.name}`);
+
+                // フォーラムとテキストチャンネルのスレッドをキャッシュ
+                let totalThreads = 0;
+                for (const channel of guild.channels.cache.values()) {
+                    try {
+                        // フォーラムチャンネルまたはテキストチャンネル（スレッド機能があるチャンネル）
+                        if (channel.type === ChannelType.GuildForum ||
+                            channel.type === ChannelType.GuildText ||
+                            channel.type === ChannelType.GuildAnnouncement) {
+
+                            // アクティブなスレッドを取得
+                            const activeThreads = await channel.threads.fetchActive();
+                            totalThreads += activeThreads.threads.size;
+
+                            // アーカイブされたスレッドを取得（公開）
+                            const archivedPublic = await channel.threads.fetchArchived({ type: 'public' });
+                            totalThreads += archivedPublic.threads.size;
+
+                            // アーカイブされたスレッドを取得（プライベート）- 権限がある場合のみ
+                            try {
+                                const archivedPrivate = await channel.threads.fetchArchived({ type: 'private' });
+                                totalThreads += archivedPrivate.threads.size;
+                            } catch (privError) {
+                                // プライベートスレッドの権限がない場合はスキップ
+                            }
+                        }
+                    } catch (threadError) {
+                        // 個別チャンネルのスレッド取得エラーは無視して続行
+                        console.error(`Failed to cache threads from channel ${channel.name}:`, threadError.message);
+                    }
+                }
+
+                if (totalThreads > 0) {
+                    console.log(`Cached ${totalThreads} threads from ${guild.name}`);
+                }
 
             } catch (error) {
                 console.error(`Failed to cache data from ${guild.name}:`, error);
