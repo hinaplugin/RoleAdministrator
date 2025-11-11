@@ -8,7 +8,22 @@ const client = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages
-    ]
+    ],
+    // キャッシュを停止するまで保持（自動削除を無効化）
+    sweepers: {
+        guildMembers: {
+            interval: Infinity, // メンバーキャッシュのスイープを無効化
+            filter: () => null
+        },
+        messages: {
+            interval: Infinity, // メッセージキャッシュのスイープを無効化
+            filter: () => null
+        },
+        threads: {
+            interval: Infinity, // スレッドキャッシュのスイープを無効化
+            filter: () => null
+        }
+    }
 });
 
 client.commands = new Collection();
