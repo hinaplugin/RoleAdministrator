@@ -65,6 +65,18 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 }
                 
                 const embed = await createRolePanelEmbed(guild, panelData);
+
+                // スレッドがアーカイブされている場合はアンアーカイブ
+                if (message.thread && message.thread.archived) {
+                    try {
+                        await message.thread.setArchived(false);
+                        console.log(`スレッド ${message.thread.name} をアンアーカイブしました`);
+                    } catch (archiveError) {
+                        console.error(`スレッドのアンアーカイブに失敗:`, archiveError);
+                        continue;
+                    }
+                }
+
                 await message.edit({ embeds: [embed] });
 
                 // パネルデータのupdatedAtを更新
