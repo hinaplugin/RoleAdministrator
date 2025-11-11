@@ -18,7 +18,7 @@ module.exports = {
                 console.log(`Cached ${guild.memberCount} members from ${guild.name}`);
 
                 // チャンネルキャッシュ（ギルド取得時に自動キャッシュされるが明示的に取得）
-                await guild.channels.fetch({ timeout: 60000});
+                await guild.channels.fetch();
                 console.log(`Cached ${guild.channels.cache.size} channels from ${guild.name}`);
 
             } catch (error) {
