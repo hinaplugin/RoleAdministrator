@@ -48,7 +48,6 @@ module.exports = {
                         }
                     } catch (threadError) {
                         // 個別チャンネルのスレッド取得エラーは無視して続行
-                        console.error(`Failed to cache threads from channel ${channel.name}:`, threadError.message);
                     }
                 }
 
