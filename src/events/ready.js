@@ -40,6 +40,7 @@ module.exports = {
                 });
 
                 // 使用されているチャンネルとスレッドのみを並列でキャッシュ
+                const cachedParentChannels = new Set();
                 const channelFetchPromises = Array.from(usedChannelIds).map(async (channelId) => {
                     try {
                         // チャンネルまたはスレッドを取得（client.channels.fetchでスレッドも取得可能）
@@ -48,7 +49,10 @@ module.exports = {
                         if (channel) {
                             // スレッドの場合は親チャンネルもキャッシュ
                             if (channel.isThread() && channel.parentId) {
-                                await client.channels.fetch(channel.parentId).catch(() => null);
+                                const parent = await client.channels.fetch(channel.parentId).catch(() => null);
+                                if (parent) {
+                                    cachedParentChannels.add(channel.parentId);
+                                }
                                 return { type: 'thread', found: true };
                             }
                             return { type: 'channel', found: true };
@@ -63,7 +67,7 @@ module.exports = {
 
                 // すべてのチャンネル取得が完了するまで待機
                 const results = await Promise.all(channelFetchPromises);
-                const cachedChannels = results.filter(r => r.type === 'channel' && r.found).length;
+                const cachedChannels = results.filter(r => r.type === 'channel' && r.found).length + cachedParentChannels.size;
                 const cachedThreads = results.filter(r => r.type === 'thread' && r.found).length;
 
                 if (cachedChannels > 0 || cachedThreads > 0) {
