@@ -74,6 +74,36 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
+                .setName('edit')
+                .setDescription('ボタンを編集します')
+                .addStringOption(option =>
+                    option.setName('name')
+                        .setDescription('編集するボタン名')
+                        .setRequired(true)
+                )
+                .addRoleOption(option =>
+                    option.setName('role')
+                        .setDescription('対象ロール')
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName('message')
+                        .setDescription('ボタンの説明文')
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName('joinlabel')
+                        .setDescription('参加ボタンのラベル')
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName('leavelabel')
+                        .setDescription('退出ボタンのラベル')
+                        .setRequired(false)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
                 .setName('info')
                 .setDescription('ボタンの詳細情報を表示します')
                 .addStringOption(option =>
@@ -91,6 +121,8 @@ module.exports = {
             await handleCreateCommand(interaction);
         } else if (subcommand === 'delete') {
             await handleDeleteCommand(interaction);
+        } else if (subcommand === 'edit') {
+            await handleEditCommand(interaction);
         } else if (subcommand === 'info') {
             await handleInfoCommand(interaction);
         }
@@ -184,6 +216,127 @@ async function handleCreateCommand(interaction) {
     } else {
         await interaction.reply({
             content: '⚠️ ボタンは作成されましたが、データの保存に失敗しました。',
+            ephemeral: true
+        });
+    }
+}
+
+async function handleEditCommand(interaction) {
+    const buttonName = interaction.options.getString('name');
+    const role = interaction.options.getRole('role');
+    const message = interaction.options.getString('message');
+    const joinLabel = interaction.options.getString('joinlabel');
+    const leaveLabel = interaction.options.getString('leavelabel');
+    const guildId = interaction.guild.id;
+
+    // ボタン名の検証
+    if (!/^[a-zA-Z0-9_-]+$/.test(buttonName)) {
+        await interaction.reply({
+            content: 'ボタン名は英数字、ハイフン、アンダースコアのみ使用できます。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // ボタンの存在確認
+    const buttonData = loadButtonData(guildId, buttonName);
+    if (!buttonData) {
+        await interaction.reply({
+            content: `ボタン "${buttonName}" が見つかりません。`,
+            ephemeral: true
+        });
+        return;
+    }
+
+    // 更新内容を確認
+    const updates = [];
+
+    // ロールの更新
+    if (role) {
+        buttonData.roleId = role.id;
+        updates.push('対象ロール');
+    }
+
+    // 説明文の更新
+    if (message !== null) {
+        const formattedMessage = message.replace(/\\n/g, '\n');
+        buttonData.message = formattedMessage;
+        updates.push('説明文');
+    }
+
+    // 参加ボタンラベルの更新
+    if (joinLabel !== null) {
+        buttonData.joinLabel = joinLabel;
+        updates.push('参加ボタンラベル');
+    }
+
+    // 退出ボタンラベルの更新
+    if (leaveLabel !== null) {
+        buttonData.leaveLabel = leaveLabel;
+        updates.push('退出ボタンラベル');
+    }
+
+    // 更新がない場合
+    if (updates.length === 0) {
+        await interaction.reply({
+            content: '更新する項目を指定してください。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // データを保存
+    const saved = saveButtonData(guildId, buttonName, buttonData);
+
+    if (!saved) {
+        await interaction.reply({
+            content: 'ボタンデータの保存に失敗しました。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // ボタンを再表示
+    try {
+        const channel = interaction.guild.channels.cache.get(buttonData.channelId);
+        if (channel && buttonData.messageId) {
+            const oldMessage = await channel.messages.fetch(buttonData.messageId);
+            if (oldMessage) {
+                const defaults = getDefaultButtonSettings();
+
+                // ボタンを再作成
+                const joinButton = new ButtonBuilder()
+                    .setCustomId(`role_join_${buttonData.roleId}_${buttonName}`)
+                    .setLabel(buttonData.joinLabel || defaults.joinLabel)
+                    .setStyle(ButtonStyle.Success)
+                    .setEmoji(buttonData.joinEmoji || defaults.joinEmoji);
+
+                const leaveButton = new ButtonBuilder()
+                    .setCustomId(`role_leave_${buttonData.roleId}_${buttonName}`)
+                    .setLabel(buttonData.leaveLabel || defaults.leaveLabel)
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji(buttonData.leaveEmoji || defaults.leaveEmoji);
+
+                const row = new ActionRowBuilder()
+                    .addComponents(joinButton, leaveButton);
+
+                await oldMessage.edit({
+                    content: buttonData.message,
+                    components: [row]
+                });
+            }
+        }
+
+        await interaction.reply({
+            content: `✅ ボタン "${buttonName}" を更新しました。\n更新項目: ${updates.join(', ')}`,
+            ephemeral: true
+        });
+
+        console.log(`ロールボタン "${buttonName}" を ${interaction.user.tag} が ${interaction.guild.name} で編集しました (${updates.join(', ')})`);
+    } catch (error) {
+        console.error(`ボタン更新エラー: ${guildId}/${buttonName}:`, error);
+        await interaction.reply({
+            content: '⚠️ ボタンは更新されましたが、メッセージの更新に失敗しました。',
             ephemeral: true
         });
     }

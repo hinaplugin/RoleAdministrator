@@ -42,6 +42,31 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
+                .setName('edit')
+                .setDescription('ロール選択メニューを編集します')
+                .addStringOption(option =>
+                    option.setName('name')
+                        .setDescription('編集するメニュー名')
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option.setName('roles')
+                        .setDescription('対象ロール（複数可、スペース区切り）')
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName('message')
+                        .setDescription('メニューの説明文')
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName('placeholder')
+                        .setDescription('メニューのプレースホルダーテキスト')
+                        .setRequired(false)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
                 .setName('info')
                 .setDescription('ロール選択メニューの詳細情報を表示します')
                 .addStringOption(option =>
@@ -59,6 +84,8 @@ module.exports = {
             await handleCreateCommand(interaction);
         } else if (subcommand === 'delete') {
             await handleDeleteCommand(interaction);
+        } else if (subcommand === 'edit') {
+            await handleEditCommand(interaction);
         } else if (subcommand === 'info') {
             await handleInfoCommand(interaction);
         }
@@ -189,6 +216,159 @@ async function handleCreateCommand(interaction) {
     } else {
         await interaction.reply({
             content: '⚠️ メニューは作成されましたが、データの保存に失敗しました。',
+            ephemeral: true
+        });
+    }
+}
+
+async function handleEditCommand(interaction) {
+    const menuName = interaction.options.getString('name');
+    const rolesString = interaction.options.getString('roles');
+    const message = interaction.options.getString('message');
+    const placeholder = interaction.options.getString('placeholder');
+    const guildId = interaction.guild.id;
+
+    // メニュー名の検証
+    if (!/^[a-zA-Z0-9_-]+$/.test(menuName)) {
+        await interaction.reply({
+            content: 'メニュー名は英数字、ハイフン、アンダースコアのみ使用できます。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // メニューの存在確認
+    const menuData = loadMenuData(guildId, menuName);
+    if (!menuData) {
+        await interaction.reply({
+            content: `メニュー "${menuName}" が見つかりません。`,
+            ephemeral: true
+        });
+        return;
+    }
+
+    // 更新内容を確認
+    const updates = [];
+
+    // ロールの更新
+    if (rolesString) {
+        const roleIds = [];
+        const roleMentions = rolesString.match(/<@&(\d+)>/g);
+
+        if (!roleMentions || roleMentions.length === 0) {
+            await interaction.reply({
+                content: 'ロールが正しく指定されていません。@roleの形式で指定してください。',
+                ephemeral: true
+            });
+            return;
+        }
+
+        if (roleMentions.length > 25) {
+            await interaction.reply({
+                content: 'セレクトメニューには最大25個のロールまで設定できます。',
+                ephemeral: true
+            });
+            return;
+        }
+
+        for (const mention of roleMentions) {
+            const roleId = mention.match(/\d+/)[0];
+            const role = interaction.guild.roles.cache.get(roleId);
+
+            if (!role) {
+                await interaction.reply({
+                    content: `ロール ID ${roleId} が見つかりません。`,
+                    ephemeral: true
+                });
+                return;
+            }
+
+            if (!roleIds.includes(roleId)) {
+                roleIds.push(roleId);
+            }
+        }
+
+        menuData.roleIds = roleIds;
+        updates.push('対象ロール');
+    }
+
+    // 説明文の更新
+    if (message !== null) {
+        const formattedMessage = message.replace(/\\n/g, '\n');
+        menuData.message = formattedMessage;
+        updates.push('説明文');
+    }
+
+    // プレースホルダーの更新
+    if (placeholder !== null) {
+        menuData.placeholder = placeholder;
+        updates.push('プレースホルダー');
+    }
+
+    // 更新がない場合
+    if (updates.length === 0) {
+        await interaction.reply({
+            content: '更新する項目を指定してください。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // データを保存
+    const saved = saveMenuData(guildId, menuName, menuData);
+
+    if (!saved) {
+        await interaction.reply({
+            content: 'メニューデータの保存に失敗しました。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // メニューを再表示
+    try {
+        const channel = interaction.guild.channels.cache.get(menuData.channelId);
+        if (channel && menuData.messageId) {
+            const oldMessage = await channel.messages.fetch(menuData.messageId);
+            if (oldMessage) {
+                // セレクトメニューオプションを再作成
+                const options = menuData.roleIds.map(roleId => {
+                    const role = interaction.guild.roles.cache.get(roleId);
+                    return new StringSelectMenuOptionBuilder()
+                        .setLabel(role.name)
+                        .setDescription(`${role.name}ロールを付与/削除`)
+                        .setValue(roleId)
+                        .setEmoji('🎭');
+                });
+
+                // セレクトメニューを再作成
+                const selectMenu = new StringSelectMenuBuilder()
+                    .setCustomId(`role_menu_${menuName}`)
+                    .setPlaceholder(menuData.placeholder)
+                    .setMinValues(0)
+                    .setMaxValues(menuData.roleIds.length)
+                    .addOptions(options);
+
+                const row = new ActionRowBuilder()
+                    .addComponents(selectMenu);
+
+                await oldMessage.edit({
+                    content: menuData.message,
+                    components: [row]
+                });
+            }
+        }
+
+        await interaction.reply({
+            content: `✅ メニュー "${menuName}" を更新しました。\n更新項目: ${updates.join(', ')}`,
+            ephemeral: true
+        });
+
+        console.log(`ロール選択メニュー "${menuName}" を ${interaction.user.tag} が ${interaction.guild.name} で編集しました (${updates.join(', ')})`);
+    } catch (error) {
+        console.error(`メニュー更新エラー: ${guildId}/${menuName}:`, error);
+        await interaction.reply({
+            content: '⚠️ メニューは更新されましたが、メッセージの更新に失敗しました。',
             ephemeral: true
         });
     }

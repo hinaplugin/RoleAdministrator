@@ -48,6 +48,36 @@ module.exports = {
         )
         .addSubcommand(subcommand =>
             subcommand
+                .setName('edit')
+                .setDescription('パネルを編集します')
+                .addStringOption(option =>
+                    option.setName('name')
+                        .setDescription('編集するパネル名')
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option.setName('roles')
+                        .setDescription('対象ロール（複数の場合はスペース区切り）')
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName('title')
+                        .setDescription('パネルのタイトル')
+                        .setRequired(false)
+                )
+                .addStringOption(option =>
+                    option.setName('message')
+                        .setDescription('パネルの説明文')
+                        .setRequired(false)
+                )
+                .addBooleanOption(option =>
+                    option.setName('showcount')
+                        .setDescription('メンバー数を表示するか')
+                        .setRequired(false)
+                )
+        )
+        .addSubcommand(subcommand =>
+            subcommand
                 .setName('info')
                 .setDescription('パネルの詳細情報を表示します')
                 .addStringOption(option =>
@@ -65,6 +95,8 @@ module.exports = {
             await handleCreateCommand(interaction);
         } else if (subcommand === 'delete') {
             await handleDeleteCommand(interaction);
+        } else if (subcommand === 'edit') {
+            await handleEditCommand(interaction);
         } else if (subcommand === 'info') {
             await handleInfoCommand(interaction);
         }
@@ -200,6 +232,129 @@ function parseRoles(rolesInput, guild) {
 
     // 重複を除去
     return [...new Set(roleIds)];
+}
+
+async function handleEditCommand(interaction) {
+    const panelName = interaction.options.getString('name');
+    const rolesInput = interaction.options.getString('roles');
+    const title = interaction.options.getString('title');
+    const message = interaction.options.getString('message');
+    const showCount = interaction.options.getBoolean('showcount');
+    const guildId = interaction.guild.id;
+
+    // パネル名の検証
+    if (!/^[a-zA-Z0-9_-]+$/.test(panelName)) {
+        await interaction.reply({
+            content: 'パネル名は英数字、ハイフン、アンダースコアのみ使用できます。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // パネルの存在確認
+    const panelData = loadPanelData(guildId, panelName);
+    if (!panelData) {
+        await interaction.reply({
+            content: `パネル "${panelName}" が見つかりません。`,
+            ephemeral: true
+        });
+        return;
+    }
+
+    // 更新内容を確認
+    const updates = [];
+
+    // ロールの更新
+    if (rolesInput) {
+        const roleIds = parseRoles(rolesInput, interaction.guild);
+
+        if (roleIds.length === 0) {
+            await interaction.reply({
+                content: 'ロールが正しく指定されていません。',
+                ephemeral: true
+            });
+            return;
+        }
+
+        // ロールが存在するか確認
+        for (const roleId of roleIds) {
+            const role = interaction.guild.roles.cache.get(roleId);
+            if (!role) {
+                await interaction.reply({
+                    content: `ロール ID ${roleId} が見つかりません。`,
+                    ephemeral: true
+                });
+                return;
+            }
+        }
+
+        panelData.roleIds = roleIds;
+        updates.push('対象ロール');
+    }
+
+    // タイトルの更新
+    if (title !== null) {
+        panelData.title = title;
+        updates.push('タイトル');
+    }
+
+    // 説明文の更新
+    if (message !== null) {
+        const formattedMessage = message.replace(/\\n/g, '\n');
+        panelData.message = formattedMessage;
+        updates.push('説明文');
+    }
+
+    // メンバー数表示の更新
+    if (showCount !== null) {
+        panelData.showCount = showCount;
+        updates.push('メンバー数表示');
+    }
+
+    // 更新がない場合
+    if (updates.length === 0) {
+        await interaction.reply({
+            content: '更新する項目を指定してください。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // データを保存
+    const saved = savePanelData(guildId, panelName, panelData);
+
+    if (!saved) {
+        await interaction.reply({
+            content: 'パネルデータの保存に失敗しました。',
+            ephemeral: true
+        });
+        return;
+    }
+
+    // パネルを再表示
+    try {
+        const channel = interaction.guild.channels.cache.get(panelData.channelId);
+        if (channel && panelData.messageId) {
+            const oldMessage = await channel.messages.fetch(panelData.messageId);
+            if (oldMessage) {
+                const embed = await createRolePanelEmbed(interaction.guild, panelData);
+                await oldMessage.edit({ embeds: [embed] });
+            }
+        }
+
+        await interaction.reply({
+            content: `✅ パネル "${panelName}" を更新しました。\n更新項目: ${updates.join(', ')}`,
+            ephemeral: true
+        });
+
+        console.log(`ロールパネル "${panelName}" を ${interaction.user.tag} が ${interaction.guild.name} で編集しました (${updates.join(', ')})`);
+    } catch (error) {
+        console.error(`パネル更新エラー: ${guildId}/${panelName}:`, error);
+        await interaction.reply({
+            content: '⚠️ パネルは更新されましたが、メッセージの更新に失敗しました。',
+            ephemeral: true
+        });
+    }
 }
 
 async function handleDeleteCommand(interaction) {

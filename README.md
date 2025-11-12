@@ -13,6 +13,7 @@ Discord サーバーでロール管理を自動化するボットです。新規
 - 指定したロールの所有者一覧をEmbed形式で表示
 - ロールごとに分けて表示（## ロールメンション → メンバー一覧 → メンバー数）
 - `/rolepanel create` で動的に作成・設置
+- `/rolepanel edit` で作成後に編集可能（ロール、タイトル、説明文、メンバー数表示）
 - `/rolepanel delete` でパネルとメッセージを削除
 - 複数ロール対応（1つのパネルで複数ロール表示可能）
 - メンバー数の表示オプション（各ロール個別）
@@ -23,6 +24,7 @@ Discord サーバーでロール管理を自動化するボットです。新規
 ### 🔘 ロール切り替えボタン（新アーキテクチャ）
 - ユーザーがボタンをクリックしてロールのつけ外しが可能
 - `/rolebutton create` で動的に作成・設置
+- `/rolebutton edit` で作成後に編集可能（ロール、説明文、ボタンラベル）
 - `/rolebutton delete` でボタンとメッセージを削除
 - カスタマイズ可能なボタンラベル（オプション、デフォルト設定あり）
 - ファイルベース保存（`<DATA_DIR>/<guildId>/button/<name>.json`）
@@ -31,6 +33,7 @@ Discord サーバーでロール管理を自動化するボットです。新規
 ### 📝 ロール選択メニュー（新アーキテクチャ）
 - ユーザーがセレクトメニューから複数のロールを選択してつけ外しが可能
 - `/rolemenu create` で動的に作成・設置
+- `/rolemenu edit` で作成後に編集可能（ロール、説明文、プレースホルダー）
 - `/rolemenu delete` でメニューとメッセージを削除
 - `/rolemenu info` でメニュー情報を表示
 - 最大25個のロールをメニューに設定可能
@@ -207,6 +210,7 @@ npm run dev
 #### パネル管理
 - `/rolepanel create roles:@Admin @Moderator name:staff title:"スタッフ一覧" message:"スタッフロールを持つメンバーの一覧です"` - スタッフパネルを作成
 - `/rolepanel create roles:@開発者 name:dev title:"開発チーム" message:"開発メンバーです" showcount:true` - メンバー数表示ありでパネルを作成
+- `/rolepanel edit name:staff title:"新しいタイトル"` - パネルのタイトルを編集
 - `/rolepanel delete name:staff` - スタッフパネルを削除
 - `/rolepanel info` - 全パネルの一覧を表示
 - `/rolepanel info name:staff` - スタッフパネルの詳細情報を表示
@@ -214,6 +218,7 @@ npm run dev
 #### ボタン管理
 - `/rolebutton create role:@通知 name:notification message:"通知設定を変更できます"` - 通知ボタンを作成
 - `/rolebutton create role:@開発者 name:dev message:"開発チームです" joinlabel:"参加する" leavelabel:"退出する"` - カスタムラベルでボタンを作成
+- `/rolebutton edit name:notification message:"新しい説明文"` - ボタンの説明文を編集
 - `/rolebutton delete name:notification` - 通知ボタンを削除
 - `/rolebutton info` - 全ボタンの一覧を表示
 - `/rolebutton info name:notification` - 通知ボタンの詳細情報を表示
@@ -221,6 +226,7 @@ npm run dev
 #### メニュー管理
 - `/rolemenu create roles:@役割1 @役割2 @役割3 name:roles message:"ロールを選択してください"` - ロール選択メニューを作成
 - `/rolemenu create roles:@開発者 @デザイナー @マーケター name:team message:"チームロールを選択" placeholder:"所属チームを選択"` - プレースホルダー付きメニューを作成
+- `/rolemenu edit name:team placeholder:"新しいプレースホルダー"` - メニューのプレースホルダーを編集
 - `/rolemenu delete name:roles` - ロール選択メニューを削除
 - `/rolemenu info` - 全メニューの一覧を表示
 - `/rolemenu info name:roles` - メニューの詳細情報を表示
