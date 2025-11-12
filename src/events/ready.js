@@ -1,5 +1,5 @@
 const { Events, ActivityType } = require('discord.js');
-const { loadAllPanelsForGuild, loadAllButtonsForGuild } = require('../utils/panelStorage');
+const { loadAllPanelsForGuild, loadAllButtonsForGuild, loadAllMenusForGuild } = require('../utils/panelStorage');
 
 module.exports = {
     name: Events.ClientReady,
@@ -19,9 +19,10 @@ module.exports = {
                 await guild.members.fetch({ timeout: 60000 });
                 console.log(`Cached ${guild.memberCount} members from ${guild.name}`);
 
-                // パネルとボタンのデータを読み込んで、使用されているチャンネルIDを取得
+                // パネル、ボタン、メニューのデータを読み込んで、使用されているチャンネルIDを取得
                 const panels = loadAllPanelsForGuild(guild.id);
                 const buttons = loadAllButtonsForGuild(guild.id);
+                const menus = loadAllMenusForGuild(guild.id);
 
                 const usedChannelIds = new Set();
 
@@ -36,6 +37,13 @@ module.exports = {
                 Object.values(buttons).forEach(button => {
                     if (button.channelId) {
                         usedChannelIds.add(button.channelId);
+                    }
+                });
+
+                // メニューが設置されているチャンネルIDを収集
+                Object.values(menus).forEach(menu => {
+                    if (menu.channelId) {
+                        usedChannelIds.add(menu.channelId);
                     }
                 });
 
