@@ -64,7 +64,20 @@ CONFIG_PATH=./src/config.json
 DATA_DIR=./src/data
 ```
 
-### 4. ボット権限
+### 4. ボット権限とIntents
+
+#### 必須Intents（Privileged Gateway Intents）
+
+Discord Developer Portalで以下のIntentsを**必ず有効化**してください：
+
+| Intent名 | 用途 |
+|---------|------|
+| **Server Members Intent** | メンバー情報の取得・キャッシュ（ロールパネルのメンバー一覧表示に必須） |
+
+**設定方法:**
+1. [Discord Developer Portal](https://discord.com/developers/applications) にアクセス
+2. アプリケーションを選択 → Bot → Privileged Gateway Intents
+3. **Server Members Intent** を有効化
 
 #### 必須権限
 
@@ -74,8 +87,9 @@ DATA_DIR=./src/data
 |--------|----------|------|
 | **Manage Roles** | ロールの管理 | 自動ロール付与・ロールボタン機能 |
 | **Send Messages** | メッセージ送信 | ロールパネル・ロールボタンの送信・更新 |
+| **Send Messages in Threads** | スレッドでメッセージを送信 | フォーラム・スレッド内でのパネル更新 |
 | **Embed Links** | 埋め込みリンク | **ロールパネルの表示に必須** |
-| **View Channel** | チャンネルを見る | 基本的なチャンネルアクセス |
+| **View Channels** | チャンネルを見る | 基本的なチャンネルアクセス |
 | **Read Message History** | メッセージ履歴を読む | パネル更新のためのメッセージ取得 |
 
 #### 推奨権限
@@ -86,7 +100,6 @@ DATA_DIR=./src/data
 |--------|----------|------|
 | **Manage Messages** | メッセージ管理 | パネルの編集・管理 |
 | **Use Slash Commands** | スラッシュコマンドの使用 | コマンド実行 |
-| **View Server Members** | サーバーメンバーを見る | ロールパネルのメンバー一覧表示 |
 
 #### 権限設定方法
 
