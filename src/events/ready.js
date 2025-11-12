@@ -1,4 +1,5 @@
-const { Events, ActivityType, ChannelType } = require('discord.js');
+const { Events, ActivityType } = require('discord.js');
+const { loadAllPanelsForGuild, loadAllButtonsForGuild } = require('../utils/panelStorage');
 
 module.exports = {
     name: Events.ClientReady,
@@ -14,47 +15,59 @@ module.exports = {
         // すべてのサーバーを並列処理でキャッシュ
         const cachePromises = Array.from(client.guilds.cache.values()).map(async (guild) => {
             try {
-                // メンバーキャッシュ
+                // メンバーキャッシュ（ロールパネル表示に必要）
                 await guild.members.fetch({ timeout: 60000 });
                 console.log(`Cached ${guild.memberCount} members from ${guild.name}`);
 
-                // チャンネルキャッシュ（ギルド取得時に自動キャッシュされるが明示的に取得）
-                await guild.channels.fetch();
-                console.log(`Cached ${guild.channels.cache.size} channels from ${guild.name}`);
+                // パネルとボタンのデータを読み込んで、使用されているチャンネルIDを取得
+                const panels = loadAllPanelsForGuild(guild.id);
+                const buttons = loadAllButtonsForGuild(guild.id);
 
-                // スレッド対応チャンネルのみをフィルタリング
-                const threadSupportedChannels = guild.channels.cache.filter(channel =>
-                    channel.type === ChannelType.GuildForum ||
-                    channel.type === ChannelType.GuildText ||
-                    channel.type === ChannelType.GuildAnnouncement
-                );
+                const usedChannelIds = new Set();
 
-                // フォーラムとテキストチャンネルのスレッドをキャッシュ
-                let totalThreads = 0;
-                for (const channel of threadSupportedChannels.values()) {
-                    try {
-                        // アクティブなスレッドを取得
-                        const activeThreads = await channel.threads.fetchActive();
-                        totalThreads += activeThreads.threads.size;
-
-                        // アーカイブされたスレッドを取得（公開）
-                        const archivedPublic = await channel.threads.fetchArchived({ type: 'public' });
-                        totalThreads += archivedPublic.threads.size;
-
-                        // アーカイブされたスレッドを取得（プライベート）- 権限がある場合のみ
-                        try {
-                            const archivedPrivate = await channel.threads.fetchArchived({ type: 'private' });
-                            totalThreads += archivedPrivate.threads.size;
-                        } catch (privError) {
-                            // プライベートスレッドの権限がない場合はスキップ
-                        }
-                    } catch (threadError) {
-                        // 個別チャンネルのスレッド取得エラーは無視して続行
+                // パネルが設置されているチャンネルIDを収集
+                Object.values(panels).forEach(panel => {
+                    if (panel.channelId) {
+                        usedChannelIds.add(panel.channelId);
                     }
-                }
+                });
 
-                if (totalThreads > 0) {
-                    console.log(`Cached ${totalThreads} threads from ${guild.name}`);
+                // ボタンが設置されているチャンネルIDを収集
+                Object.values(buttons).forEach(button => {
+                    if (button.channelId) {
+                        usedChannelIds.add(button.channelId);
+                    }
+                });
+
+                // 使用されているチャンネルとスレッドのみを並列でキャッシュ
+                const channelFetchPromises = Array.from(usedChannelIds).map(async (channelId) => {
+                    try {
+                        // チャンネルまたはスレッドを取得（client.channels.fetchでスレッドも取得可能）
+                        const channel = await client.channels.fetch(channelId).catch(() => null);
+
+                        if (channel) {
+                            // スレッドの場合は親チャンネルもキャッシュ
+                            if (channel.isThread() && channel.parentId) {
+                                await client.channels.fetch(channel.parentId).catch(() => null);
+                                return { type: 'thread', found: true };
+                            }
+                            return { type: 'channel', found: true };
+                        }
+
+                        return { type: 'none', found: false };
+                    } catch (fetchError) {
+                        // 個別チャンネル取得エラーは無視
+                        return { type: 'none', found: false };
+                    }
+                });
+
+                // すべてのチャンネル取得が完了するまで待機
+                const results = await Promise.all(channelFetchPromises);
+                const cachedChannels = results.filter(r => r.type === 'channel' && r.found).length;
+                const cachedThreads = results.filter(r => r.type === 'thread' && r.found).length;
+
+                if (cachedChannels > 0 || cachedThreads > 0) {
+                    console.log(`Cached ${cachedChannels} channels and ${cachedThreads} threads from ${guild.name}`);
                 }
 
             } catch (error) {
