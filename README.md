@@ -28,6 +28,17 @@ Discord サーバーでロール管理を自動化するボットです。新規
 - ファイルベース保存（`<DATA_DIR>/<guildId>/button/<name>.json`）
 - 重複名チェック機能
 
+### 📝 ロール選択メニュー（新アーキテクチャ）
+- ユーザーがセレクトメニューから複数のロールを選択してつけ外しが可能
+- `/rolemenu create` で動的に作成・設置
+- `/rolemenu delete` でメニューとメッセージを削除
+- `/rolemenu info` でメニュー情報を表示
+- 最大25個のロールをメニューに設定可能
+- 複数選択対応（0個から全てのロールまで同時選択可能）
+- カスタマイズ可能なプレースホルダーテキスト
+- ファイルベース保存（`<DATA_DIR>/<guildId>/menu/<name>.json`）
+- 重複名チェック機能
+
 ### 🛠️ 管理コマンド
 - `/help` - ヘルプ情報表示
 
@@ -42,7 +53,7 @@ Discord サーバーでロール管理を自動化するボットです。新規
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/hinaplugin/RoleAdministrator.git
+git clone https://github.com/hinaplugin/WelcomePower.git
 cd WelcomePower
 
 # 依存関係をインストール
@@ -207,6 +218,13 @@ npm run dev
 - `/rolebutton info` - 全ボタンの一覧を表示
 - `/rolebutton info name:notification` - 通知ボタンの詳細情報を表示
 
+#### メニュー管理
+- `/rolemenu create roles:@役割1 @役割2 @役割3 name:roles message:"ロールを選択してください"` - ロール選択メニューを作成
+- `/rolemenu create roles:@開発者 @デザイナー @マーケター name:team message:"チームロールを選択" placeholder:"所属チームを選択"` - プレースホルダー付きメニューを作成
+- `/rolemenu delete name:roles` - ロール選択メニューを削除
+- `/rolemenu info` - 全メニューの一覧を表示
+- `/rolemenu info name:roles` - メニューの詳細情報を表示
+
 #### その他
 - `/help` - ヘルプを表示
 
@@ -230,6 +248,16 @@ npm run dev
 4. **カスタムラベルのボタンを作成**:
    ```
    /rolebutton create role:@イベント参加者 name:event message:"イベントに参加する場合はボタンを押してください" joinlabel:"参加します" leavelabel:"不参加"
+   ```
+
+5. **ロール選択メニューを作成**:
+   ```
+   /rolemenu create roles:@開発者 @デザイナー @マーケター name:teamroles message:"あなたの職種に応じたロールを選択してください"
+   ```
+
+6. **複数選択可能なメニューを作成**:
+   ```
+   /rolemenu create roles:@通知ON @イベント通知 @アップデート通知 name:notifications message:"受け取りたい通知を選択してください" placeholder:"通知設定を選択"
    ```
 
 ### 権限要件
