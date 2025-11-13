@@ -39,7 +39,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 const message = await channel.messages.fetch(panelData.messageId);
 
                 console.log("channel: " + panelData.channelId);
-                console.log("message: " + message.thread.id);
+                console.log("message: " + message.thread);
                 if (!message) {
                     console.error(`メッセージが見つかりません: ${panelData.messageId}`);
                     continue;
