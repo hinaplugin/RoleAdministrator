@@ -38,8 +38,6 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 
                 const message = await channel.messages.fetch(panelData.messageId);
 
-                console.log("channel: " + panelData.channelId);
-                console.log("message: " + message);
                 if (!message) {
                     console.error(`メッセージが見つかりません: ${panelData.messageId}`);
                     continue;
@@ -70,10 +68,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 const embed = await createRolePanelEmbed(guild, panelData);
 
                 // スレッドがアーカイブされている場合はアンアーカイブ
-                console.log("thread: " + message.thread);
-                console.log("archived: " + message.thread.archived);
                 if (message.thread && message.thread.archived) {
-                    console.log("thread archived");
                     try {
                         await message.thread.edit({ archived: false });
                         console.log(`スレッド ${message.thread.name} をアンアーカイブしました`);
