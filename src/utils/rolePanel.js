@@ -70,6 +70,8 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 const embed = await createRolePanelEmbed(guild, panelData);
 
                 // スレッドがアーカイブされている場合はアンアーカイブ
+                console.log("thread: " + message.thread);
+                console.log("archived: " + message.thread.archived);
                 if (message.thread && message.thread.archived) {
                     console.log("thread archived");
                     try {
