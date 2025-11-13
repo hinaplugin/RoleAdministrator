@@ -69,7 +69,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 // スレッドがアーカイブされている場合はアンアーカイブ
                 if (message.thread && message.thread.archived) {
                     try {
-                        await message.thread.setArchived(false);
+                        await message.thread.edit({ archived: false });
                         console.log(`スレッド ${message.thread.name} をアンアーカイブしました`);
                     } catch (archiveError) {
                         console.error(`スレッドのアンアーカイブに失敗:`, archiveError);
