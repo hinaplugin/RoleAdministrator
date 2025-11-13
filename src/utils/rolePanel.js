@@ -37,6 +37,9 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 }
                 
                 const message = await channel.messages.fetch(panelData.messageId);
+
+                console.log("channel: " + panelData.channelId);
+                console.log("message: " + message.thread.id);
                 if (!message) {
                     console.error(`メッセージが見つかりません: ${panelData.messageId}`);
                     continue;
@@ -68,6 +71,7 @@ async function updateRolePanels(guild, changedRoleIds = null) {
 
                 // スレッドがアーカイブされている場合はアンアーカイブ
                 if (message.thread && message.thread.archived) {
+                    console.log("thread archived");
                     try {
                         await message.thread.edit({ archived: false });
                         console.log(`スレッド ${message.thread.name} をアンアーカイブしました`);
