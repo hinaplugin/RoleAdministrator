@@ -68,10 +68,14 @@ async function updateRolePanels(guild, changedRoleIds = null) {
                 const embed = await createRolePanelEmbed(guild, panelData);
 
                 // スレッドがアーカイブされている場合はアンアーカイブ
-                if (message.thread && message.thread.archived) {
+                // フォーラムチャンネルの場合: message.channelがスレッド
+                // テキストチャンネルの場合: message.threadがスレッド
+                const thread = message.channel.isThread() ? message.channel : message.thread;
+
+                if (thread && thread.archived) {
                     try {
-                        await message.thread.edit({ archived: false });
-                        console.log(`スレッド ${message.thread.name} をアンアーカイブしました`);
+                        await thread.edit({ archived: false });
+                        console.log(`スレッド ${thread.name} をアンアーカイブしました`);
                     } catch (archiveError) {
                         console.error(`スレッドのアンアーカイブに失敗:`, archiveError);
                         continue;
